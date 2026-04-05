@@ -349,6 +349,264 @@ def _get_diagnosis_note(diseases: list) -> str:
     return "\n\n".join(parts)
 
 
+# ── Clinical treatments knowledge base ───────────────────────────────────────
+
+_DISEASE_TREATMENTS = {
+    "Alzheimer's Disease": {
+        "Disease-modifying therapies (FDA-approved)": [
+            "lecanemab (Leqembi) — anti-amyloid antibody shown to slow cognitive decline "
+            "in early-stage Alzheimer's",
+            "donanemab (Kisunla) — another anti-amyloid antibody; slows decline in "
+            "early symptomatic stages",
+            "aducanumab (Aduhelm) — approved but less widely used; removes amyloid plaques",
+        ],
+        "Symptomatic medications": [
+            "cholinesterase inhibitors — donepezil (Aricept), rivastigmine, galantamine; "
+            "improve memory and thinking in mild-to-moderate Alzheimer's",
+            "memantine (Namenda) — for moderate-to-severe Alzheimer's; regulates glutamate activity",
+        ],
+        "Non-pharmacological approaches": [
+            "cognitive stimulation therapy and structured activities",
+            "physical exercise — shown to slow cognitive decline",
+            "management of cardiovascular risk factors (blood pressure, diabetes, cholesterol)",
+            "social engagement and mental stimulation",
+            "caregiver support programmes",
+        ],
+    },
+    "Parkinson's Disease": {
+        "First-line medications": [
+            "levodopa/carbidopa (Sinemet) — gold standard; replaces dopamine and greatly "
+            "reduces motor symptoms",
+            "dopamine agonists — pramipexole, ropinirole, rotigotine patch; used in early "
+            "disease or alongside levodopa",
+            "MAO-B inhibitors — selegiline, rasagiline, safinamide; prolong dopamine action",
+        ],
+        "For advanced Parkinson's": [
+            "deep brain stimulation (DBS) — electrical stimulation of specific brain areas; "
+            "reduces tremor, rigidity, and dyskinesia significantly",
+            "levodopa intestinal gel (Duodopa) — continuous infusion for fluctuating symptoms",
+            "COMT inhibitors — entacapone, opicapone; reduce 'off' periods",
+        ],
+        "Non-pharmacological": [
+            "physiotherapy — improves balance, gait, and falls prevention",
+            "speech and language therapy — for voice and swallowing difficulties",
+            "occupational therapy — maintains independence in daily tasks",
+            "exercise programmes (e.g., tai chi, boxing) — shown to slow motor decline",
+        ],
+    },
+    "ALS and Huntington's Disease": {
+        "ALS — disease-modifying treatments": [
+            "riluzole — modestly slows progression by reducing glutamate toxicity; extends "
+            "survival by approximately 2–3 months",
+            "edaravone (Radicava) — reduces oxidative stress; may slow functional decline "
+            "in a subset of patients",
+            "tofersen — for ALS caused by SOD1 gene mutations; reduces SOD1 protein levels",
+        ],
+        "ALS — supportive care": [
+            "non-invasive ventilation (BiPAP/CPAP) — as breathing muscles weaken",
+            "percutaneous endoscopic gastrostomy (PEG) — feeding tube when swallowing fails",
+            "communication aids and augmentative communication devices",
+            "multidisciplinary clinic care — neurologist, physio, speech, dietitian, palliative",
+        ],
+        "Huntington's Disease — symptom management": [
+            "tetrabenazine or deutetrabenazine — reduce involuntary movements (chorea)",
+            "antidepressants (SSRIs) — for depression and irritability",
+            "antipsychotics — for psychosis and agitation",
+            "speech and swallowing therapy",
+            "no disease-modifying treatment currently approved; trials ongoing",
+        ],
+    },
+    "Dementia and Mild Cognitive Impairment": {
+        "Medications for Alzheimer's-type dementia": [
+            "cholinesterase inhibitors (donepezil, rivastigmine) — for mild-to-moderate dementia",
+            "memantine — for moderate-to-severe dementia",
+            "anti-amyloid antibodies (lecanemab, donanemab) — if early Alzheimer's confirmed",
+        ],
+        "Managing other dementia types": [
+            "vascular dementia — managing blood pressure, cholesterol, and diabetes; "
+            "antiplatelet therapy to prevent further strokes",
+            "Lewy body dementia — rivastigmine for cognition; caution with antipsychotics "
+            "(can cause severe reactions)",
+            "frontotemporal dementia — no approved drugs; manage behavioural symptoms carefully",
+        ],
+        "Non-pharmacological": [
+            "structured cognitive stimulation and reminiscence therapy",
+            "physical activity programmes",
+            "carer education and support",
+            "safe home environment to reduce falls and wandering risks",
+        ],
+    },
+    "Stroke": {
+        "Acute treatment (emergency)": [
+            "intravenous thrombolysis — tPA (alteplase) given within 4.5 hours of ischaemic "
+            "stroke onset to dissolve the blood clot",
+            "mechanical thrombectomy — catheter-based clot removal; effective up to 24 hours "
+            "in selected patients",
+            "blood pressure control and surgery for haemorrhagic stroke",
+        ],
+        "Secondary prevention": [
+            "antiplatelet therapy — aspirin, clopidogrel; prevents recurrent ischaemic stroke",
+            "anticoagulation — warfarin or DOACs (apixaban, rivaroxaban) for atrial fibrillation",
+            "statins — lower cholesterol and reduce stroke recurrence risk",
+            "blood pressure management — ACE inhibitors, ARBs",
+        ],
+        "Rehabilitation": [
+            "physiotherapy — regain mobility and strength",
+            "speech and language therapy — for aphasia and swallowing difficulties",
+            "occupational therapy — relearn daily living skills",
+            "neuropsychological support — for cognitive and emotional changes",
+            "early intensive rehabilitation improves long-term outcomes",
+        ],
+    },
+}
+
+
+# ── Clinical risk factors knowledge base ─────────────────────────────────────
+
+_DISEASE_RISK_FACTORS = {
+    "Alzheimer's Disease": {
+        "Non-modifiable risk factors": [
+            "age — the strongest risk factor; risk doubles every 5 years after 65",
+            "genetics — APOE ε4 allele increases risk 3–4× (one copy) or 8–12× (two copies)",
+            "family history — first-degree relative with Alzheimer's doubles your risk",
+            "Down syndrome — almost all individuals develop Alzheimer's pathology by their 40s",
+        ],
+        "Modifiable risk factors": [
+            "cardiovascular risk — hypertension, diabetes, obesity, high cholesterol",
+            "physical inactivity",
+            "smoking",
+            "depression — both a risk factor and early symptom",
+            "hearing loss — untreated hearing loss is one of the largest modifiable risks",
+            "low education and limited cognitive reserve",
+            "social isolation",
+            "traumatic brain injury",
+        ],
+    },
+    "Parkinson's Disease": {
+        "Non-modifiable risk factors": [
+            "age — risk increases significantly after 60",
+            "male sex — men are approximately 1.5× more likely to develop Parkinson's",
+            "genetics — mutations in LRRK2, PINK1, SNCA, PARK7 genes; familial cases account "
+            "for ~10–15% of diagnoses",
+        ],
+        "Environmental risk factors": [
+            "pesticide and herbicide exposure (e.g., rotenone, paraquat) — strongly linked",
+            "heavy metal exposure (manganese, lead)",
+            "well water consumption in rural settings",
+            "traumatic brain injury",
+        ],
+        "Protective factors (lower risk)": [
+            "smoking — paradoxically associated with lower risk (not recommended as a strategy)",
+            "caffeine / coffee consumption",
+            "regular physical exercise",
+            "ibuprofen / NSAID use (some studies show association)",
+        ],
+    },
+    "ALS and Huntington's Disease": {
+        "ALS risk factors": [
+            "genetics — C9orf72, SOD1, FUS, TARDBP mutations account for ~10% of cases "
+            "(familial ALS); the rest are sporadic",
+            "military service — veterans have 1.5–2× higher risk than civilians",
+            "heavy physical labour and intense athletic activity",
+            "smoking — the most established environmental risk factor",
+            "age — peak onset between 55–75",
+            "male sex — slightly higher risk",
+        ],
+        "Huntington's Disease": [
+            "purely genetic — caused by CAG repeat expansion in the HTT gene; "
+            "autosomal dominant inheritance (50% chance of passing to children)",
+            "longer CAG repeat = earlier onset and more severe disease",
+            "if a parent has Huntington's, each child has a 50% chance of inheriting it",
+            "no environmental risk factors identified",
+        ],
+    },
+    "Dementia and Mild Cognitive Impairment": {
+        "Vascular and metabolic risk factors": [
+            "hypertension — the most important modifiable risk factor",
+            "type 2 diabetes",
+            "atrial fibrillation — increases stroke risk and vascular dementia",
+            "high cholesterol",
+            "obesity, especially in midlife",
+        ],
+        "Lifestyle risk factors": [
+            "physical inactivity",
+            "smoking",
+            "heavy alcohol consumption",
+            "social isolation and loneliness",
+            "untreated depression",
+            "poor sleep (links to amyloid accumulation)",
+        ],
+        "Non-modifiable": [
+            "age",
+            "APOE ε4 genotype",
+            "family history",
+            "prior head injuries",
+        ],
+    },
+    "Stroke": {
+        "Major modifiable risk factors": [
+            "hypertension — the single most important risk factor; responsible for approximately "
+            "54% of strokes worldwide",
+            "atrial fibrillation — 5× increased stroke risk; requires anticoagulation",
+            "diabetes",
+            "smoking — doubles stroke risk",
+            "high cholesterol / hyperlipidaemia",
+            "obesity",
+            "physical inactivity",
+            "excessive alcohol",
+        ],
+        "Non-modifiable risk factors": [
+            "age — risk doubles each decade after 55",
+            "male sex",
+            "family history",
+            "prior stroke or TIA (transient ischaemic attack)",
+            "ethnicity — higher risk in Black and South Asian populations",
+        ],
+        "Less common causes": [
+            "carotid artery disease",
+            "patent foramen ovale (PFO)",
+            "sleep apnoea",
+            "cocaine and amphetamine use",
+            "oral contraceptive pill (particularly with smoking or migraine)",
+        ],
+    },
+}
+
+
+def _build_knowledge_section(label: str, knowledge_dict: dict, section_title: str) -> str:
+    """Render a structured knowledge block (symptoms / treatments / risk factors)."""
+    data = knowledge_dict.get(label, {})
+    if not data:
+        return ""
+    parts = [f"### {section_title} of {label}\n"]
+    for group_name, items in data.items():
+        parts.append(f"**{group_name}:**")
+        for item in items:
+            parts.append(f"- {item}")
+        parts.append("")
+    return "\n".join(parts)
+
+
+def _get_treatment_answer(diseases: list) -> str:
+    """Return a structured treatment overview for the named disease(s)."""
+    parts = []
+    for d in diseases:
+        block = _build_knowledge_section(d, _DISEASE_TREATMENTS, "Treatments")
+        if block:
+            parts.append(block)
+    return "\n".join(parts)
+
+
+def _get_risk_factor_answer(diseases: list) -> str:
+    """Return a structured risk factor overview for the named disease(s)."""
+    parts = []
+    for d in diseases:
+        block = _build_knowledge_section(d, _DISEASE_RISK_FACTORS, "Risk Factors")
+        if block:
+            parts.append(block)
+    return "\n".join(parts)
+
+
 def _get_symptom_answer(question: str, diseases: list) -> str:
     """
     Return a direct, natural-language symptom overview for the named disease(s).
@@ -390,17 +648,30 @@ def _clean(text: str, max_len: int = 160) -> str:
 def _is_raw_sentence(text: str) -> bool:
     """
     Returns True when a PICOS field looks like a raw abstract sentence
-    rather than a clean named concept (e.g. a drug name or short phrase).
-    Heuristic: longer than 90 chars, or starts with a number/article.
+    rather than a clean named concept (e.g. a drug name, short phrase).
+    Heuristic: longer than 80 chars OR starts with a common article/pronoun/
+    discourse marker.  Kept intentionally strict to avoid using messy LLM
+    extractions as if they were clean clinical terms.
     """
     if not text:
         return False
     t = text.strip()
-    if len(t) > 90:
+    if len(t) > 80:
         return True
     if t[0].isdigit():
         return True
-    if t.lower().startswith(("the ", "a ", "an ", "we ", "this ", "in ", "between ")):
+    _BAD_STARTS = (
+        "the ", "a ", "an ", "we ", "this ", "in ", "between ",
+        "our ", "these ", "there ", "despite ", "although ", "however ",
+        "patients with ", "individuals with ", "subjects with ",
+        "all ", "both ", "while ", "among ", "for ",
+        "substantial ", "significant ", "overall ", "recent ", "current ",
+        "results ", "findings ", "data ", "evidence ", "study ",
+    )
+    if t.lower().startswith(_BAD_STARTS):
+        return True
+    # Sentences with a verb + auxiliary pattern are likely raw abstract text
+    if " were " in t.lower() or " was " in t.lower() or " were " in t.lower():
         return True
     return False
 
@@ -432,8 +703,10 @@ def _build_study_sentence(a: dict, idx: int, intent: str) -> str:
     P = P_raw if P_raw and not _is_raw_sentence(P_raw) else ""
     S = S_raw if S_raw and not _is_raw_sentence(S_raw) else ""
 
-    # Fallback text: short excerpt displayed as a quote, or just the title
-    fallback = f'*"{excerpt}"*' if excerpt else f"*{title}*"
+    # Clean title for fallback (concise, no subtitles, no brackets)
+    clean_title = _make_clean_title(a.get("title", ""))
+    S_label = S.lower() if S else "study"
+    fallback = f"*{clean_title}* — {S_label}"
 
     # For outcome: even when the full O_raw was too long to use as a clean concept,
     # a truncated version (≤100 chars) is still better than nothing in the treatment path.
@@ -515,27 +788,51 @@ def _build_study_sentence(a: dict, idx: int, intent: str) -> str:
             return f"A study [{idx}] on *{title}* reported: {fallback}."
 
 
+def _make_clean_title(title: str, max_len: int = 85) -> str:
+    """
+    Return a concise, readable version of a paper title for use in citations.
+    Strips leading brackets (e.g., "[Huntington's disease presenting with..."),
+    takes the main clause before a long subtitle colon, and truncates.
+    """
+    t = title.strip()
+    # Remove leading [bracketed] article markers
+    if t.startswith("["):
+        end = t.find("]")
+        if 0 < end < 80:
+            t = t[end + 1:].strip(" :")
+    # Keep only the main clause if there is a descriptive subtitle after ":"
+    if ":" in t:
+        colon = t.index(":")
+        if colon > 20:
+            t = t[:colon]
+    # Truncate
+    if len(t) > max_len:
+        t = t[:max_len].rsplit(" ", 1)[0] + "…"
+    return t
+
+
 def _build_lit_support_sentence(a: dict, idx: int) -> str:
     """
-    Write a supporting sentence for the literature section of symptom answers.
-    Uses title + clean outcome; falls back to an attributed excerpt quote.
+    Write one compact, readable citation line for the 'What the literature adds'
+    section. Tries clean O first; falls back to a tidy bibliography-style line.
     """
-    title   = _clean_title(a.get("title", ""), max_len=90)
-    year    = a.get("year", "recent")
-    O       = _clean(a["O"])
-    P       = _clean(a["P"])
-    excerpt = _clean(a.get("abstract", ""), max_len=170)
+    title = _make_clean_title(a.get("title", ""))
+    year  = a.get("year", "")
+    O     = _clean(a["O"])
+    S     = _clean(a["S"], max_len=50)
 
-    # Use outcome if it's a clean finding, not a raw sentence
-    if O and not _is_raw_sentence(O):
-        s = f"Research on *{title}* [{idx}] found that {O.lower()}"
-        if P and not _is_raw_sentence(P):
-            s += f", in {P}"
-        return s + "."
-    # Otherwise use a short excerpt as a quote
-    if excerpt:
-        return f"A {year} study on *{title}* [{idx}] reported: *\"{excerpt}\"*"
-    return f"See [{idx}] *{title}*."
+    # Only use O if it is a genuinely short, clean finding
+    if O and len(O) <= 70 and not _is_raw_sentence(O):
+        return f"**[{idx}]** Research found that {O.lower()}."
+
+    # Otherwise give a clean bibliography-style reference
+    study_label = (
+        S.lower()
+        if S and not _is_raw_sentence(S)
+        else "study"
+    )
+    year_str = f", {year}" if year else ""
+    return f"**[{idx}]** *{title}* ({study_label}{year_str})"
 
 
 # ── Clinical context for common comparison questions ─────────────────────────
@@ -701,6 +998,25 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
 
     # ── TREATMENT path ────────────────────────────────────────────────────────
     elif is_treatment:
+        treatment_knowledge = _get_treatment_answer(diseases)
+        if treatment_knowledge:
+            lit_items = [_build_lit_support_sentence(a, i) for i, a in indexed]
+            lit_items = [s for s in lit_items if s]
+            lit_section = (
+                "\n\n---\n**What the research literature adds:**\n\n"
+                + "\n\n".join(lit_items[:4])
+            ) if lit_items else ""
+            closing = (
+                "\n\n> ⚕️ Treatments vary by stage and individual. "
+                "Always consult a qualified clinician before starting or changing any medication."
+            )
+            return (
+                f"Here's an overview of treatments for {disease_str}:\n\n"
+                + treatment_knowledge
+                + lit_section
+                + _source_block(indexed)
+                + closing
+            )
         opening = (
             f"Several approaches have been studied for {disease_str}. "
             f"Here's a synthesis of what the literature shows:\n"
@@ -709,6 +1025,25 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
 
     # ── RISK path ─────────────────────────────────────────────────────────────
     elif is_risk:
+        risk_knowledge = _get_risk_factor_answer(diseases)
+        if risk_knowledge:
+            lit_items = [_build_lit_support_sentence(a, i) for i, a in indexed]
+            lit_items = [s for s in lit_items if s]
+            lit_section = (
+                "\n\n---\n**What the research literature adds:**\n\n"
+                + "\n\n".join(lit_items[:4])
+            ) if lit_items else ""
+            closing = (
+                "\n\n> ⚕️ Risk factors indicate population-level associations. "
+                "Individual risk should be assessed by a qualified clinician."
+            )
+            return (
+                f"Here are the known risk factors for {disease_str}:\n\n"
+                + risk_knowledge
+                + lit_section
+                + _source_block(indexed)
+                + closing
+            )
         opening = (
             f"Several risk factors have been identified for {disease_str}. "
             f"Here's what the evidence says across {n} studies:\n"

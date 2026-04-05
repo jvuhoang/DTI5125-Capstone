@@ -82,6 +82,130 @@ _QUESTION_STARTER_WORDS = {
     "tell", "explain", "describe", "list", "compare",
 }
 
+# ── Medical relevance keyword set ────────────────────────────────────────────
+# If NONE of these appear and the message isn't a question or symptom report,
+# we treat it as off-topic small talk and respond with a polite redirect.
+#
+# Organised by category. Uses substring matching (kw in text_lower), so short
+# roots like "tremor" match "tremors", "forget" matches "forgetting", etc.
+# All entries are lowercase.
+
+_MEDICAL_RELEVANCE_KEYWORDS = {
+
+    # ── General medical / clinical vocabulary ─────────────────────────────────
+    "symptom", "symptoms", "disease", "condition", "disorder", "syndrome",
+    "treatment", "therapy", "drug", "medication", "medicine", "dose", "dosage",
+    "diagnosis", "prognosis", "clinical", "patient", "doctor", "physician",
+    "hospital", "clinic", "neurologist", "specialist", "medical", "health",
+    "brain", "nerve", "neural", "cerebral", "neurological", "neurology",
+    "neurodegenerative", "genetic", "hereditary", "inherited", "progressive",
+    "chronic", "acute", "onset", "stage", "early-stage", "late-stage",
+
+    # ── Research / literature vocabulary ──────────────────────────────────────
+    "risk", "cause", "factor", "research", "study", "trial", "evidence",
+    "intervention", "outcome", "prevalence", "incidence", "management",
+    "literature", "paper", "journal", "published", "findings", "clinical trial",
+    "randomised", "placebo", "cohort",
+
+    # ── Alzheimer's Disease — names & synonyms ────────────────────────────────
+    "alzheimer", "alzheimers", "alzheimer's",
+
+    # ── Parkinson's Disease — names & synonyms ────────────────────────────────
+    "parkinson", "parkinsons", "parkinson's", "parkinsonism",
+
+    # ── ALS — names & synonyms ────────────────────────────────────────────────
+    "als", "amyotrophic", "lateral sclerosis", "motor neuron", "lou gehrig", "mnd",
+
+    # ── Huntington's Disease — names & synonyms ───────────────────────────────
+    "huntington", "huntingtons", "huntington's",
+
+    # ── Dementia / MCI — names & synonyms ────────────────────────────────────
+    "dementia", "cognitive impairment", "mild cognitive", "mci",
+    "vascular dementia", "lewy body", "frontotemporal", "forgetful",
+
+    # ── Stroke — names & synonyms ─────────────────────────────────────────────
+    "stroke", "cerebrovascular", "brain attack", "tia", "transient ischemic",
+    "ischaemic", "ischemic", "haemorrhagic", "hemorrhagic", "thrombectomy",
+    "thrombolysis", "alteplase", "anticoagulant", "antiplatelet",
+
+    # ── Multiple sclerosis (mentioned in ontology / blocklist) ────────────────
+    "multiple sclerosis", "sclerosis",
+
+    # ── Motor symptoms ────────────────────────────────────────────────────────
+    "tremor", "tremors", "shaking", "shaky", "shake", "trembling",
+    "resting tremor", "pill-rolling",
+    "bradykinesia", "slowness", "slow movement", "moving slowly",
+    "akinesia", "freezing", "frozen movement",
+    "hypokinesia", "reduced movement",
+    "rigidity", "stiffness", "stiff", "muscle stiffness", "cogwheel",
+    "dystonia", "spasm", "spasms", "muscle cramp",
+    "chorea", "involuntary movement", "uncontrollable movement",
+    "hypomimia", "masked face", "facial masking", "expressionless face",
+    "kinesia paradoxica",
+    "gait", "shuffling", "shuffle", "walking problem", "difficulty walking",
+    "balance", "postural instability", "imbalance", "unsteady",
+    "falls", "falling", "stumbling", "frequent falls",
+    "paralysis", "paralysed", "paralyzed",
+
+    # ── Weakness ──────────────────────────────────────────────────────────────
+    "weakness", "weak", "muscle weakness", "limb weakness",
+    "arm weakness", "leg weakness", "axial weakness", "trunk weakness",
+    "muscle wasting", "atrophy", "muscle atrophy", "muscle loss",
+
+    # ── Speech / voice / swallowing ───────────────────────────────────────────
+    "speech", "slurred", "slurring", "dysarthria",
+    "swallow", "swallowing", "dysphagia", "choking",
+    "voice", "soft voice", "hypophonia", "quiet voice",
+    "drooling", "drool", "sialorrhoea", "excessive saliva",
+    "bulbar", "bulbar dysfunction", "bulbar palsy",
+    "aphasia", "word finding", "language problem",
+
+    # ── Cognitive / memory symptoms ───────────────────────────────────────────
+    "memory", "forget", "forgetfulness", "forgetting", "memory loss",
+    "cognitive", "cognitive decline", "brain fog", "confusion", "disorientation",
+    "disoriented", "confused", "executive dysfunction", "reasoning problem",
+    "concentration", "focus",
+
+    # ── Neuropsychiatric symptoms ─────────────────────────────────────────────
+    "hallucin", "seeing things", "hearing things", "visual hallucination",
+    "depress", "depression", "low mood", "sadness", "mood",
+    "anxiety", "anxious", "panic", "restless", "akathisia",
+    "apathy", "personality change", "behavioural change", "behavior change",
+    "pseudobulbar", "emotional lability", "involuntary crying",
+    "mood swing", "irritable",
+
+    # ── Autonomic / systemic symptoms ─────────────────────────────────────────
+    "autonomic", "constipation", "bowel", "incontinence", "bladder control",
+    "sweating", "hyperhidrosis",
+    "smell", "anosmia", "hyposmia", "loss of smell",
+    "breathing", "respiratory", "shortness of breath", "breathe",
+    "sleep", "insomnia", "rem sleep", "sleep disorder", "sleep disturbance",
+    "fatigue", "tired", "exhausted", "no energy",
+
+    # ── Sensory symptoms ──────────────────────────────────────────────────────
+    "numbness", "numb", "tingling", "paresthesia", "pins and needles",
+    "burning sensation", "electric feeling",
+    "vision", "blurry", "blurred", "double vision", "visual disturbance",
+    "dizziness", "dizzy", "lightheaded", "vertigo",
+
+    # ── Pain / other ──────────────────────────────────────────────────────────
+    "pain", "neuropathic", "aching", "muscle pain", "headache", "migraine",
+    "seizure", "seizures", "convulsion", "epilepsy", "fits",
+    "fainting", "blackout", "blacking out", "loss of consciousness",
+    "facial droop", "facial drooping", "facial weakness",
+    "sudden numbness", "sudden weakness", "sudden confusion",
+    "weight loss", "losing weight",
+    "chest pain",
+
+    # ── Medications & treatments (catch medication-name questions) ────────────
+    "levodopa", "carbidopa", "donepezil", "memantine", "rivastigmine",
+    "galantamine", "lecanemab", "donanemab", "aducanumab",
+    "riluzole", "edaravone", "tetrabenazine", "deutetrabenazine",
+    "antibiotic", "vaccine", "supplement", "vitamin", "supplement",
+    "aspirin", "statin", "warfarin", "apixaban", "clopidogrel",
+    "antidepressant", "antipsychotic", "sedative", "sleep aid",
+}
+
 
 def is_factual_query(text: str) -> bool:
     """
@@ -136,6 +260,31 @@ def is_symptom_description(text: str) -> bool:
     except Exception:
         has_synonym_hit = False
     return has_report_phrase and (has_symptom_word or has_synonym_hit)
+
+
+def is_off_topic(text: str) -> bool:
+    """
+    Returns True when a message has no apparent medical relevance and is
+    clearly casual conversation — not a question, not a symptom report,
+    and contains none of the medical relevance keywords.
+
+    Used to guard the RAG route so random small talk ("I see 2 rabbits outside")
+    does not trigger a literature retrieval, even when the session is in rag mode.
+    """
+    text_lower = text.lower().strip()
+    if not text_lower:
+        return False
+    # Questions always get a chance to be answered
+    if "?" in text_lower:
+        return False
+    first_word = text_lower.split()[0]
+    if first_word in _QUESTION_STARTER_WORDS:
+        return False
+    # Any medical keyword → let it through
+    if any(kw in text_lower for kw in _MEDICAL_RELEVANCE_KEYWORDS):
+        return False
+    # No medical signal detected → treat as off-topic
+    return True
 
 
 def predict_disease(text: str, clf, vectorizer, le) -> Optional[str]:
@@ -382,6 +531,20 @@ def handle_turn(
     st.session_state.history.append({"role": "user", "content": user_text})
 
     template = st.session_state.template
+
+    # ── Off-topic guard ────────────────────────────────────────────────────────
+    # Intercept messages with no medical relevance before they reach the RAG
+    # pipeline. This prevents casual small talk ("I see 2 rabbits outside")
+    # from triggering a literature retrieval, even when session mode is "rag".
+    if is_off_topic(user_text) and not is_symptom_description(user_text):
+        off_topic_reply = (
+            "I'm focused on neurological and neurodegenerative conditions. "
+            "Feel free to describe symptoms you're concerned about, or ask me "
+            "anything about Alzheimer's, Parkinson's, ALS, Huntington's, "
+            "Dementia, or Stroke — I'm happy to help with those."
+        )
+        st.session_state.history.append({"role": "assistant", "content": off_topic_reply})
+        return off_topic_reply
 
     # ── Mode auto-switch: RAG → intake ────────────────────────────────────────
     # If the user was in RAG mode (literature Q&A) but this message looks like

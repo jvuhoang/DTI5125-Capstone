@@ -191,6 +191,143 @@ def _build_context(abstracts: list[dict]) -> str:
     return "\n\n".join(parts)
 
 
+# ── Clinical knowledge base — symptoms per disease ────────────────────────────
+# Used to give a direct, natural-language answer for symptom questions before
+# backing it up with the retrieved literature.
+
+_DISEASE_SYMPTOMS = {
+    "Alzheimer's Disease": {
+        "Early signs": [
+            "memory loss, especially for recent events",
+            "difficulty finding the right words",
+            "losing or misplacing objects",
+            "trouble with planning, problem-solving, or following steps",
+            "confusion about time, dates, or familiar places",
+            "mood changes — depression, anxiety, or withdrawal",
+        ],
+        "As it progresses": [
+            "worsening memory, including forgetting close family members",
+            "difficulty with daily tasks like cooking or managing finances",
+            "personality and behaviour changes",
+            "hallucinations or delusions",
+            "wandering",
+        ],
+        "Late stage": [
+            "loss of verbal communication",
+            "difficulty swallowing",
+            "loss of mobility",
+            "full-time care required",
+        ],
+    },
+    "Parkinson's Disease": {
+        "Motor symptoms": [
+            "resting tremor (shaking when the limb is relaxed)",
+            "bradykinesia — slowness of movement",
+            "muscle rigidity or stiffness",
+            "postural instability and balance problems",
+            "shuffling gait and reduced arm swing",
+            "micrographia — small, cramped handwriting",
+            "masked face — reduced facial expression",
+        ],
+        "Non-motor symptoms": [
+            "sleep disturbances, including REM sleep behaviour disorder",
+            "loss of sense of smell (anosmia)",
+            "constipation and digestive issues",
+            "depression and anxiety",
+            "cognitive changes and, in later stages, dementia",
+            "fatigue",
+            "low blood pressure on standing (orthostatic hypotension)",
+        ],
+    },
+    "ALS and Huntington's Disease": {
+        "ALS symptoms": [
+            "progressive muscle weakness, often starting in one hand or foot",
+            "muscle twitching (fasciculations) and cramping",
+            "slurred or slow speech",
+            "difficulty swallowing (dysphagia)",
+            "shortness of breath as breathing muscles weaken",
+            "muscle wasting (atrophy)",
+        ],
+        "Huntington's symptoms": [
+            "involuntary, irregular jerking movements (chorea)",
+            "impaired balance and coordination",
+            "cognitive decline — difficulty concentrating and planning",
+            "psychiatric symptoms: depression, irritability, impulsivity",
+            "difficulty swallowing and weight loss",
+            "slurred speech",
+        ],
+    },
+    "Dementia and Mild Cognitive Impairment": {
+        "Mild Cognitive Impairment (MCI)": [
+            "noticeable memory lapses beyond normal ageing",
+            "occasional difficulty finding words",
+            "forgetting appointments or recent conversations",
+            "mostly able to manage daily life independently",
+        ],
+        "Dementia": [
+            "significant memory loss affecting daily function",
+            "confusion and disorientation to time and place",
+            "difficulty with language and communication",
+            "impaired judgement and decision-making",
+            "personality and behavioural changes",
+            "loss of independence in daily activities",
+        ],
+    },
+    "Stroke": {
+        "Acute warning signs (FAST)": [
+            "Face drooping on one side",
+            "Arm weakness — inability to raise both arms",
+            "Speech difficulty — slurred or strange speech",
+            "Time to call emergency services",
+        ],
+        "Other sudden symptoms": [
+            "sudden numbness in the face, arm, or leg (especially one side)",
+            "sudden confusion or trouble understanding",
+            "sudden vision problems in one or both eyes",
+            "sudden severe headache with no known cause",
+            "sudden dizziness or loss of balance",
+        ],
+        "Post-stroke effects": [
+            "paralysis or weakness on one side",
+            "aphasia — difficulty speaking or understanding language",
+            "memory and cognitive problems",
+            "emotional changes — depression, anxiety",
+            "fatigue",
+        ],
+    },
+}
+
+
+def _get_symptom_answer(question: str, diseases: list) -> str:
+    """
+    Return a direct, natural-language symptom overview for the named disease(s).
+    Returns an empty string if no matching disease is found.
+    """
+    q = question.lower()
+
+    # Find which disease(s) the question is asking about
+    target_diseases = []
+    for label, symptoms in _DISEASE_SYMPTOMS.items():
+        label_lower = label.lower()
+        # Check against both the canonical label and common abbreviations in the question
+        if any(word in q for word in label_lower.split()) or label in diseases:
+            target_diseases.append((label, symptoms))
+
+    if not target_diseases:
+        return ""
+
+    parts = []
+    for label, symptom_groups in target_diseases:
+        parts.append(f"### Symptoms of {label}\n")
+        for group_name, symptom_list in symptom_groups.items():
+            parts.append(f"**{group_name}:**")
+            for s in symptom_list:
+                parts.append(f"- {s}")
+            parts.append("")
+
+    return "\n".join(parts)
+
+
 def _clean(text: str, max_len: int = 160) -> str:
     """Trim a PICOS field to a readable sentence length."""
     if not text or text.strip().lower() in ("not reported", ""):
@@ -293,7 +430,8 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
         "survival", "life expectancy", "stage", "advance",
     ])
     is_symptom_q = any(w in q for w in [
-        "symptom", "sign", "feel", "experience", "what happens",
+        "symptom", "sign", "feel", "experience", "what happens", "indicate",
+        "manifest", "present", "look like", "symptoms of",
     ])
     # Comparison takes priority; otherwise default to treatment if nothing matched
     if not any([is_diagnosis, is_treatment, is_risk, is_progression, is_symptom_q]):
@@ -302,6 +440,47 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
     n = len(abstracts)
     diseases = sorted({a["disease"] for a in abstracts})
     disease_str = " and ".join(diseases[:2]) if diseases else "neurological conditions"
+
+    # ── Symptom questions: lead with clinical knowledge, back with literature ─
+    if is_symptom_q and not is_comparison:
+        symptom_answer = _get_symptom_answer(question, diseases)
+        if symptom_answer:
+            # Compact literature support — just excerpts + source list
+            lit_lines = []
+            for i, a in enumerate(abstracts, 1):
+                excerpt = _clean(a.get("abstract", ""), max_len=180)
+                outcome = _clean(a["O"])
+                # Prefer outcome over raw excerpt when available and clean
+                snippet = outcome if outcome and not _is_raw_sentence(outcome) else excerpt
+                if snippet:
+                    lit_lines.append(f"**[{i}]** *{snippet}*")
+
+            lit_section = ""
+            if lit_lines:
+                lit_section = (
+                    "\n\n---\n"
+                    "**What the research literature adds:**\n\n"
+                    + "\n\n".join(lit_lines[:3])   # top 3 only to keep it readable
+                )
+
+            source_lines = ["\n\n**Sources:**"]
+            for i, a in enumerate(abstracts, 1):
+                title = (a["title"][:70] + "…") if len(a["title"]) > 70 else a["title"]
+                source_lines.append(f"[{i}] {title} ({a['year']}) — PMID {a['pmid']}")
+
+            closing = (
+                "\n\n> ⚕️ Symptoms vary between individuals and by stage. "
+                "Only a qualified clinician can provide a formal assessment."
+            )
+
+            return (
+                f"Great question. Here's an overview of the symptoms associated "
+                f"with {disease_str}:\n\n"
+                + symptom_answer
+                + lit_section
+                + "\n".join(source_lines)
+                + closing
+            )
 
     # ── Opening — direct, conversational ────────────────────────────────────
     if is_comparison:

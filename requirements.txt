@@ -9,15 +9,15 @@ rdflib>=6.3.2
 requests>=2.31.0
 
 # ── NER — biomedical named entity recognition ─────────────────────────────────
-# IMPORTANT: spacy 3.7.4 only supports Python 3.8–3.11.
-# If you are on Python 3.12+, install spaCy via conda first:
+# scispacy and spacy are OPTIONAL — the app falls back to synonym lookup and
+# keyword matching when they are unavailable (template_filler.py _nlp = None).
+# Install locally only via conda + pip (see setup.sh); NOT included here because
+# scispacy==0.5.4 requires scipy<1.11 which conflicts with scikit-learn>=1.8.
+#
+# Local install (if desired):
 #   conda install -c conda-forge spacy=3.7.4 -y
-# Then install scispaCy and the BC5CDR model:
 #   pip install scispacy==0.5.4 --no-deps
 #   pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_bc5cdr_md-0.5.4.tar.gz
-# See setup.sh for the full automated setup.
-scispacy==0.5.4
-spacy==3.7.4
 
 # ── Machine learning ──────────────────────────────────────────────────────────
 scikit-learn>=1.3.0
@@ -29,7 +29,7 @@ pandas>=2.0.0
 # ── Deep learning — BioBERT classifier ───────────────────────────────────────
 torch>=2.0.0
 transformers>=4.40.0
-datasets>=2.14.0          # used by HuggingFace Trainer
+# datasets>=2.14.0        # only needed for BioBERT fine-tuning, not runtime
 
 # ── RAG — embeddings + vector search ─────────────────────────────────────────
 sentence-transformers>=2.2.2

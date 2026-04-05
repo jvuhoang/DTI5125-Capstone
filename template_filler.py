@@ -168,9 +168,15 @@ _DURATION_PATTERNS = [
     r"\b(?:ongoing|progressing|worsening|getting\s+worse)\b",
 ]
 
-_AGE_PATTERN    = re.compile(r"\b(\d{2,3})[- ]*(?:year[s]?[- ]*old|yo|y\.o\.?)\b", re.I)
-_MALE_WORDS     = {"male", "man", "gentleman", "he", "him", "his", "boy"}
-_FEMALE_WORDS   = {"female", "woman", "lady", "she", "her", "hers", "girl"}
+# Matches: "65 year old", "65yo", "65 y.o.", "65 male", "65 M", "65M",
+#          "male 65", "M 65", "45 F", "45F", "34 female", "F 34"
+_AGE_PATTERN = re.compile(
+    r"\b(\d{2,3})[- ]*(?:year[s]?[- ]*old|yo|y\.o\.?|male|female|m|f)\b"
+    r"|\b(?:male|female|m|f)[- ]*(\d{2,3})\b",
+    re.I
+)
+_MALE_WORDS   = {"male", "man", "gentleman", "he", "him", "his", "boy"}
+_FEMALE_WORDS = {"female", "woman", "lady", "she", "her", "hers", "girl"}
 _SEVERITY_WORDS = {"mild", "moderate", "severe", "light", "serious", "intense", "bad"}
 _FAMILY_WORDS   = {
     "family", "mother", "father", "parent", "sibling", "brother", "sister",
@@ -239,10 +245,19 @@ def extract_from_text(user_text: str, template: ClinicalTemplate) -> ClinicalTem
     if template.age_gender is None:
         age_m = _AGE_PATTERN.search(text_lower)
         if age_m:
-            age = age_m.group(1)
-            if words & _MALE_WORDS:
+            # Group 1 = age-first ("65 male"), group 2 = gender-first ("M 65")
+            age = age_m.group(1) or age_m.group(2)
+            matched = age_m.group(0).lower()
+            msg_words = set(text_lower.split())
+            # Check the matched token first (catches "65M", "65 F", "M 65", etc.)
+            # then fall back to scanning the full message for gender words
+            if any(g in matched for g in ("male", " m", "m ")):
                 gender = "male"
-            elif words & _FEMALE_WORDS:
+            elif any(g in matched for g in ("female", " f", "f ")):
+                gender = "female"
+            elif msg_words & _MALE_WORDS:
+                gender = "male"
+            elif msg_words & _FEMALE_WORDS:
                 gender = "female"
             else:
                 gender = "unknown gender"

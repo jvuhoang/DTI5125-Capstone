@@ -1,0 +1,23 @@
+# Python cache — never commit compiled bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Local virtual environments
+venv/
+.venv/
+env/
+
+# scispaCy / spaCy models (large, installed locally)
+en_ner_bc5cdr_md*/
+
+# Sentence-BERT local cache
+models/
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+
+# Secrets / credentials
+.env
+*.key

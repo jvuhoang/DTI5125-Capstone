@@ -27,6 +27,7 @@ from template_filler import (
     ClinicalTemplate, extract_from_text, next_question, FIELD_PRIORITY
 )
 from rag_pipeline import PICOSRetriever, RAGAnswerGenerator
+from symptom_scorer import score_template, format_text_scores
 
 
 # ── Session initialisation ────────────────────────────────────────────────────
@@ -438,8 +439,18 @@ def handle_turn(
     # ── Route 4: All questions answered → trigger score panel ────────────────
     if not st.session_state.scored:
         st.session_state.scored = True
-        intro = _build_score_intro(template)
-        st.session_state.history.append({"role": "assistant", "content": intro})
+        intro   = _build_score_intro(template)
+        # Compute scores inline so we can show █░ bars in the chat bubble
+        _models = {"clf": clf, "vectorizer": vectorizer, "le": le,
+                   "tok_bert": None, "mod_bert": None}
+        try:
+            _scores  = score_template(template.to_text(), _models)
+            bars_msg = "\n\n" + format_text_scores(_scores, template)
+        except Exception:
+            bars_msg = ""
+        st.session_state.history.append(
+            {"role": "assistant", "content": intro + bars_msg}
+        )
         return "__SCORE__"
 
     # ── Route 5: Already scored — check if new symptoms were added this turn ──
@@ -457,8 +468,17 @@ def handle_turn(
             f"Got it — I've added *{newly_added}* to the picture. "
             f"Updating the assessment now.\n\n"
         )
-        intro = ack + _build_score_intro(template)
-        st.session_state.history.append({"role": "assistant", "content": intro})
+        intro   = ack + _build_score_intro(template)
+        _models = {"clf": clf, "vectorizer": vectorizer, "le": le,
+                   "tok_bert": None, "mod_bert": None}
+        try:
+            _scores  = score_template(template.to_text(), _models)
+            bars_msg = "\n\n" + format_text_scores(_scores, template)
+        except Exception:
+            bars_msg = ""
+        st.session_state.history.append(
+            {"role": "assistant", "content": intro + bars_msg}
+        )
         return "__SCORE__"
 
     # No new symptoms — invite literature questions

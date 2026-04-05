@@ -461,6 +461,140 @@ _DISEASE_TREATMENTS = {
 }
 
 
+# ── Prevention and risk-reduction knowledge base ─────────────────────────────
+
+_DISEASE_PREVENTION = {
+    "Alzheimer's Disease": {
+        "Lifestyle interventions with strongest evidence": [
+            "regular aerobic exercise — reduces amyloid burden, improves neuroplasticity; "
+            "150+ minutes per week recommended",
+            "cognitive engagement — lifelong learning, mentally stimulating activities, "
+            "bilingualism, and new skill acquisition build cognitive reserve",
+            "Mediterranean or MIND diet — high in vegetables, fish, olive oil, nuts; "
+            "associated with 35–53% lower risk",
+            "social connection — active social life and strong relationships are consistently "
+            "associated with lower dementia risk",
+            "quality sleep — sleep clears amyloid from the brain; 7–8 hours per night; "
+            "treat sleep apnoea if present",
+        ],
+        "Cardiovascular risk management": [
+            "control blood pressure — hypertension in midlife is one of the largest "
+            "modifiable risk factors; target systolic <130 mmHg",
+            "manage diabetes — tight glycaemic control reduces brain damage from vascular events",
+            "lower high cholesterol — statins may reduce vascular dementia risk",
+            "maintain healthy weight — obesity in midlife is associated with higher risk",
+            "quit smoking — smoking cessation reduces risk over time",
+        ],
+        "Sensory and mental health": [
+            "treat hearing loss early — hearing aids are associated with reduced dementia risk; "
+            "hearing loss is the single largest modifiable risk factor (2020 Lancet Commission)",
+            "manage depression — depression is both a risk factor and an early symptom; "
+            "effective treatment may lower risk",
+            "reduce social isolation — loneliness accelerates cognitive decline",
+        ],
+        "Currently investigational / emerging": [
+            "avoiding chronic stress (linked to cortisol-related hippocampal damage)",
+            "B vitamin supplementation in those with elevated homocysteine",
+            "moderate alcohol consumption or abstinence (heavy drinking increases risk)",
+        ],
+    },
+    "Parkinson's Disease": {
+        "Physical activity": [
+            "regular aerobic exercise — the strongest evidence-based protective factor; "
+            "associated with 30–40% lower risk in several cohort studies",
+            "vigorous exercise (running, cycling, dancing) appears most protective",
+        ],
+        "Diet and lifestyle": [
+            "caffeine consumption — coffee and tea intake consistently associated with "
+            "20–30% lower risk; mechanism may involve adenosine receptor antagonism",
+            "avoid pesticide exposure — herbicides (paraquat, rotenone) and insecticides "
+            "are the most established environmental risk factor",
+            "avoid heavy metals — occupational manganese and lead exposure increases risk",
+            "Mediterranean diet — may offer modest protective benefit",
+        ],
+        "Medical": [
+            "ibuprofen use — some epidemiological studies suggest regular NSAID use is "
+            "associated with lower risk (not a recommended strategy without medical guidance)",
+            "oestrogen exposure — some studies suggest hormonal factors modulate risk; "
+            "mechanism unclear",
+        ],
+        "Note": [
+            "no single intervention is proven to prevent Parkinson's; "
+            "exercise and avoiding pesticides have the strongest evidence",
+        ],
+    },
+    "ALS and Huntington's Disease": {
+        "ALS — what may reduce risk": [
+            "avoid smoking — the most established modifiable environmental risk factor",
+            "minimise pesticide and heavy metal exposure where possible",
+            "maintain physical fitness without extreme exertion — very intense "
+            "long-term athletic activity has been associated with slightly higher risk",
+        ],
+        "ALS — limitations": [
+            "for sporadic ALS (~90% of cases), there are no proven prevention strategies",
+            "for familial ALS, genetic counselling and testing (C9orf72, SOD1) can inform "
+            "family planning decisions",
+        ],
+        "Huntington's Disease": [
+            "Huntington's is caused entirely by a genetic mutation — it cannot be prevented "
+            "through lifestyle",
+            "predictive genetic testing is available for at-risk individuals (those with an "
+            "affected parent)",
+            "preimplantation genetic diagnosis (PGD) allows prospective parents to have "
+            "children without the mutation",
+            "exercise may slow symptom progression once diagnosed but does not prevent onset",
+        ],
+    },
+    "Dementia and Mild Cognitive Impairment": {
+        "Evidence-based risk reduction (Lancet Commission 2024 — 14 modifiable factors)": [
+            "control hypertension — the most impactful intervention; start in midlife",
+            "treat hearing loss — hearing aids associated with slower cognitive decline",
+            "increase physical activity — 150+ min/week moderate aerobic exercise",
+            "manage depression",
+            "maintain social engagement",
+            "quit smoking",
+            "limit alcohol — heavy drinking is directly neurotoxic",
+            "manage diabetes and obesity",
+            "reduce air pollution exposure where possible",
+            "address traumatic brain injury prevention (helmets, fall prevention)",
+        ],
+        "Cognitive reserve building": [
+            "higher education is protective — pursue lifelong learning",
+            "bilingualism and learning new languages",
+            "mentally stimulating work and hobbies",
+        ],
+        "Sleep and stress": [
+            "treat sleep apnoea — untreated OSA accelerates cognitive decline",
+            "target 7–8 hours of quality sleep",
+            "chronic stress management — cortisol damages the hippocampus over time",
+        ],
+    },
+    "Stroke": {
+        "Blood pressure and cardiovascular control": [
+            "control hypertension — the single most important intervention; "
+            "every 10 mmHg reduction in systolic BP reduces stroke risk by ~30%",
+            "treat atrial fibrillation — anticoagulation (warfarin, NOACs) reduces "
+            "stroke risk by ~65% in AF patients",
+            "manage diabetes — good glycaemic control reduces microvascular damage",
+            "lower LDL cholesterol — statins reduce stroke risk by ~20–30%",
+        ],
+        "Lifestyle changes": [
+            "quit smoking — smoking doubles stroke risk; risk normalises within 2–5 years "
+            "of cessation",
+            "regular physical activity — 30 min moderate exercise most days",
+            "healthy diet — Mediterranean or DASH diet; reduce salt intake",
+            "limit alcohol — no more than 1–2 units/day",
+            "maintain healthy weight — obesity increases risk via hypertension and diabetes",
+        ],
+        "Secondary prevention (after a stroke or TIA)": [
+            "antiplatelet therapy — aspirin or clopidogrel reduces recurrent ischaemic stroke",
+            "carotid endarterectomy — for high-grade carotid stenosis (>70%)",
+            "blood pressure and statin therapy continued indefinitely",
+        ],
+    },
+}
+
+
 # ── Clinical risk factors knowledge base ─────────────────────────────────────
 
 _DISEASE_RISK_FACTORS = {
@@ -602,6 +736,16 @@ def _get_risk_factor_answer(diseases: list) -> str:
     parts = []
     for d in diseases:
         block = _build_knowledge_section(d, _DISEASE_RISK_FACTORS, "Risk Factors")
+        if block:
+            parts.append(block)
+    return "\n".join(parts)
+
+
+def _get_prevention_answer(diseases: list) -> str:
+    """Return a structured risk-reduction and prevention overview for the named disease(s)."""
+    parts = []
+    for d in diseases:
+        block = _build_knowledge_section(d, _DISEASE_PREVENTION, "Risk Reduction")
         if block:
             parts.append(block)
     return "\n".join(parts)
@@ -911,7 +1055,17 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
         "treatment", "treat", "therapy", "drug", "medication", "manage",
         "intervention", "help with", "prescribed", "given for",
     ])
-    is_risk = any(w in q for w in [
+    is_prevention = any(p in q for p in [
+        "reduce risk", "lower risk", "reduce the risk", "lower the risk",
+        "reduce chance", "lower chance", "reduce my risk", "lower my risk",
+        "help prevent", "how to prevent", "ways to prevent", "prevent alzheimer",
+        "prevent parkinson", "prevent dementia", "prevent als", "prevent stroke",
+        "protect against", "protective factor", "factors that help",
+        "factors help reduce", "help reduce", "avoid getting", "avoid developing",
+        "reduce likelihood", "lower likelihood", "slow progression",
+        "delay onset", "lower your risk", "reduce your risk",
+    ])
+    is_risk = not is_prevention and any(w in q for w in [
         "risk", "cause", "factor", "likely", "prevent", "avoid",
         "predispos", "linked to", "associated with",
     ])
@@ -921,7 +1075,7 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
     ])
     # Default to treatment if nothing else matched
     if not any([is_comparison, is_symptom_q, is_diagnosis,
-                is_treatment, is_risk, is_progression]):
+                is_treatment, is_risk, is_prevention, is_progression]):
         is_treatment = True
 
     n = len(abstracts)
@@ -1000,6 +1154,26 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
             f"Here's a synthesis of what the literature shows:\n"
         )
         intent_key = "treatment"
+
+    # ── PREVENTION path ───────────────────────────────────────────────────────
+    elif is_prevention:
+        prevention_knowledge = _get_prevention_answer(diseases)
+        if prevention_knowledge:
+            closing = (
+                "\n\n> ⚕️ These are population-level strategies based on current evidence. "
+                "Individual recommendations should come from a qualified clinician."
+            )
+            return (
+                f"Here are the evidence-based ways to reduce the risk of {disease_str}:\n\n"
+                + prevention_knowledge
+                + _source_block(indexed)
+                + closing
+            )
+        opening = (
+            f"Research has identified several strategies that may reduce the risk of "
+            f"{disease_str}. Here's what the evidence shows:\n"
+        )
+        intent_key = "risk"
 
     # ── RISK path ─────────────────────────────────────────────────────────────
     elif is_risk:

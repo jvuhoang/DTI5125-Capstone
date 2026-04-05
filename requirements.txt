@@ -39,6 +39,9 @@ faiss-cpu>=1.7.4          # use faiss-gpu if a CUDA GPU is available
 # ── LLM API ───────────────────────────────────────────────────────────────────
 # anthropic>=0.25.0       # NOT REQUIRED — PICOS extraction uses HuggingFace (phase2b_picos.py)
 
+# ── Recommender sub-system (Phase 6) ─────────────────────────────────────────
+scikit-surprise>=1.1.3
+
 # ── Knowledge graph ───────────────────────────────────────────────────────────
 networkx>=3.1
 

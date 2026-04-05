@@ -243,6 +243,17 @@ def print_statistics(G: nx.Graph) -> None:
     for t, count in sorted(type_counts.items()):
         print(f"  {t:<14}: {count}")
 
+    # Top 5 nodes per type — for report
+    for ntype in ["disease", "chemical", "intervention"]:
+        typed = [
+            (n, c) for n, c in dc.items()
+            if G.nodes[n].get("node_type") == ntype
+        ]
+        typed.sort(key=lambda x: x[1], reverse=True)
+        print(f"\nTop 5 {ntype} nodes:")
+        for name, centrality in typed[:5]:
+            print(f"  {name:<45s}  centrality={centrality:.4f}")
+
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 

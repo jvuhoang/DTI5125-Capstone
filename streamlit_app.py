@@ -26,7 +26,7 @@ import os
 from rag_pipeline import PICOSRetriever, RAGAnswerGenerator
 from template_filler import ClinicalTemplate
 from conversation_manager import init_session, reset_session, handle_turn, get_greeting
-from symptom_scorer import load_all_models, score_template, render_score_panel
+from symptom_scorer import load_all_models
 
 # ── Page configuration ────────────────────────────────────────────────────────
 
@@ -199,14 +199,6 @@ def render_main(resources: dict) -> None:
         with st.chat_message(msg["role"],
                              avatar="🧠" if msg["role"] == "assistant" else None):
             st.markdown(msg["content"])
-
-    # Score panel — rendered after chat history so it appears at the bottom,
-    # directly below the message that introduced it
-    if st.session_state.get("scored") and resources:
-        with st.container():
-            scores = score_template(template.to_text(), resources["models"])
-            render_score_panel(scores, severity=template.severity)
-        st.divider()
 
     # Chat input
     if resources:

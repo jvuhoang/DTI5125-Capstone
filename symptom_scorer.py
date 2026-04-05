@@ -176,6 +176,55 @@ def confidence_label(prob: float, severity: Optional[str] = None) -> str:
     return base
 
 
+# ── Text-based score display (chat message) ──────────────────────────────────
+
+def format_text_scores(scores: dict, template=None) -> str:
+    """
+    Return a markdown string with █░ probability bars for use in the
+    chat message body (not the Streamlit panel).
+
+    Each disease gets a 20-block bar where filled blocks (█) are
+    proportional to its probability percentage.
+
+    Parameters
+    ----------
+    scores   : dict mapping disease label → probability float
+    template : unused — kept for call-site compatibility
+    """
+    sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    top_disease, top_prob = sorted_scores[0]
+
+    if top_prob >= 0.60:
+        confidence = "high"
+    elif top_prob >= 0.30:
+        confidence = "medium"
+    else:
+        confidence = "low"
+
+    lines = [
+        "**Symptom Assessment**\n",
+        "Based on the information provided, here is how the reported symptoms "
+        "compare to patterns in the research literature:\n",
+    ]
+
+    for disease, prob in sorted_scores:
+        pct     = int(prob * 100)
+        bar_len = int(pct / 5)          # 20 blocks total (each block = 5%)
+        bar     = "█" * bar_len + "░" * (20 - bar_len)
+        lines.append(f"**{disease}**")
+        lines.append(f"`{bar}` {pct}%\n")
+
+    lines.append(
+        "\n---\n"
+        "⚕️ **Important:** This assessment is based on pattern matching against "
+        "published research literature and is **not a medical diagnosis**. "
+        "Please consult a qualified neurologist or healthcare professional "
+        "for proper evaluation and diagnosis."
+    )
+
+    return "\n".join(lines)
+
+
 # ── Streamlit rendering ───────────────────────────────────────────────────────
 
 def render_score_panel(scores: dict, severity: Optional[str] = None) -> None:
@@ -186,10 +235,6 @@ def render_score_panel(scores: dict, severity: Optional[str] = None) -> None:
     import streamlit as st
 
     st.subheader("🧠 Disease Probability Assessment")
-    st.caption(
-        "Scores are derived from patterns in the PubMed literature corpus "
-        "using three ML classifiers (LinearSVC, Logistic Regression, BioBERT)."
-    )
 
     # Sort highest probability first — show top 3 only
     sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:3]

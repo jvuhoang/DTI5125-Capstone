@@ -432,7 +432,19 @@ def handle_turn(
     # All 6 fields are collected before triggering the scorer.
     nq = next_question(template)
     if nq:
-        response = f"{ack} {nq}".strip() if ack else nq
+        if not newly_filled and user_text.strip():
+            # User said something but nothing was extracted — likely a misspelling
+            # or an unclear answer. Ask again with a polite clarification prefix.
+            _RETRY_PREFIXES = [
+                "Sorry, I didn't quite catch that — could you rephrase? ",
+                "I'm not sure I understood that — could you clarify? ",
+                "Apologies, I couldn't parse that response — could you try again? ",
+            ]
+            import random as _random
+            prefix   = _random.choice(_RETRY_PREFIXES)
+            response = prefix + nq
+        else:
+            response = f"{ack} {nq}".strip() if ack else nq
         st.session_state.history.append({"role": "assistant", "content": response})
         return response
 

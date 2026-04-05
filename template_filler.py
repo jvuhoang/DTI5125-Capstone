@@ -23,6 +23,7 @@ are all filled — at that point the symptom scorer is triggered.
 from dataclasses import dataclass
 from typing import Optional
 import re
+from difflib import get_close_matches
 from symptom_synonyms import lookup_symptoms
 
 # Load scispaCy model once at module import — fully optional.
@@ -194,12 +195,46 @@ _FAMILY_WORDS   = {
 
 # ── Main extraction function ──────────────────────────────────────────────────
 
+_FUZZY_VOCAB = [
+    # Time units — corrects "yera", "yaer", "monht", "weeak", etc.
+    "year", "years", "month", "months", "week", "weeks", "day", "days",
+    # Severity — corrects "seveer", "miled", "moderrate", etc.
+    "mild", "moderate", "severe",
+    # Common yes/no variants
+    "yes", "no", "none",
+]
+
+
+def _fuzzy_correct(text: str) -> str:
+    """
+    Replace unrecognised short tokens with their closest known word.
+    Only corrects tokens that are 3+ characters and have exactly one
+    close match (cutoff 0.75) to avoid false substitutions.
+    """
+    tokens = text.split()
+    corrected = []
+    for token in tokens:
+        # Strip trailing punctuation for matching, reattach afterward
+        stripped = token.rstrip(".,!?;:")
+        suffix   = token[len(stripped):]
+        if len(stripped) >= 3 and stripped not in _FUZZY_VOCAB:
+            matches = get_close_matches(stripped, _FUZZY_VOCAB,
+                                        n=1, cutoff=0.75)
+            if matches:
+                corrected.append(matches[0] + suffix)
+                continue
+        corrected.append(token)
+    return " ".join(corrected)
+
+
 def extract_from_text(user_text: str, template: ClinicalTemplate) -> ClinicalTemplate:
     """
     Parse a user message and update any unfilled template fields.
     Uses scispaCy NER for medical entities and regex for structured fields.
     Modifies the template in place and returns it.
     """
+    # Apply fuzzy spelling correction before any field extraction
+    user_text  = _fuzzy_correct(user_text)
     text_lower = user_text.lower()
     words      = set(text_lower.split())
 

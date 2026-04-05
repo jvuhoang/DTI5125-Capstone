@@ -950,20 +950,6 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
                 if diag_note_text:
                     diag_note = f"\n\n---\n{diag_note_text}"
 
-            # Literature support — one sentence per paper, using title + clean PICOS
-            lit_items = []
-            for i, a in indexed:
-                sentence = _build_lit_support_sentence(a, i)
-                if sentence:
-                    lit_items.append(sentence)
-
-            lit_section = ""
-            if lit_items:
-                lit_section = (
-                    "\n\n---\n**What the research literature adds:**\n\n"
-                    + "\n\n".join(lit_items[:4])
-                )
-
             closing = (
                 "\n\n> ⚕️ Symptoms vary between individuals and by stage. "
                 "Only a qualified clinician can provide a formal assessment."
@@ -979,7 +965,6 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
                 intro
                 + symptom_answer
                 + diag_note
-                + lit_section
                 + _source_block(indexed)
                 + closing
             )
@@ -1000,12 +985,6 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
     elif is_treatment:
         treatment_knowledge = _get_treatment_answer(diseases)
         if treatment_knowledge:
-            lit_items = [_build_lit_support_sentence(a, i) for i, a in indexed]
-            lit_items = [s for s in lit_items if s]
-            lit_section = (
-                "\n\n---\n**What the research literature adds:**\n\n"
-                + "\n\n".join(lit_items[:4])
-            ) if lit_items else ""
             closing = (
                 "\n\n> ⚕️ Treatments vary by stage and individual. "
                 "Always consult a qualified clinician before starting or changing any medication."
@@ -1013,7 +992,6 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
             return (
                 f"Here's an overview of treatments for {disease_str}:\n\n"
                 + treatment_knowledge
-                + lit_section
                 + _source_block(indexed)
                 + closing
             )
@@ -1027,12 +1005,6 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
     elif is_risk:
         risk_knowledge = _get_risk_factor_answer(diseases)
         if risk_knowledge:
-            lit_items = [_build_lit_support_sentence(a, i) for i, a in indexed]
-            lit_items = [s for s in lit_items if s]
-            lit_section = (
-                "\n\n---\n**What the research literature adds:**\n\n"
-                + "\n\n".join(lit_items[:4])
-            ) if lit_items else ""
             closing = (
                 "\n\n> ⚕️ Risk factors indicate population-level associations. "
                 "Individual risk should be assessed by a qualified clinician."
@@ -1040,7 +1012,6 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
             return (
                 f"Here are the known risk factors for {disease_str}:\n\n"
                 + risk_knowledge
-                + lit_section
                 + _source_block(indexed)
                 + closing
             )

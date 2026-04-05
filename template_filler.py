@@ -23,18 +23,20 @@ are all filled — at that point the symptom scorer is triggered.
 from dataclasses import dataclass
 from typing import Optional
 import re
-import spacy
 from symptom_synonyms import lookup_symptoms
 
-# Load scispaCy model once at module import
+# Load scispaCy model once at module import — fully optional.
+# On Streamlit Cloud spacy is not installed (scipy conflict), so we wrap
+# the import itself in try/except, not just the model load.
 try:
+    import spacy
     _nlp = spacy.load("en_ner_bc5cdr_md")
-except OSError:
+except (ImportError, OSError):
     _nlp = None
     print(
-        "[WARN] template_filler: en_ner_bc5cdr_md not found. "
-        "NER-based extraction disabled.\n"
-        "Install with:\n"
+        "[WARN] template_filler: spacy / en_ner_bc5cdr_md not available. "
+        "NER-based extraction disabled — falling back to synonym lookup.\n"
+        "Install locally with:\n"
         "  pip install scispacy==0.5.4 spacy==3.7.4\n"
         "  pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/"
         "releases/v0.5.4/en_ner_bc5cdr_md-0.5.4.tar.gz"

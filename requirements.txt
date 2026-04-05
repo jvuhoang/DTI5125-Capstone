@@ -28,6 +28,7 @@ pandas>=2.0.0
 
 # ── Deep learning — BioBERT classifier ───────────────────────────────────────
 torch>=2.0.0
+torchvision>=0.15.0       # required by transformers>=4.37 (zoedepth vision module)
 transformers>=4.40.0
 # datasets>=2.14.0        # only needed for BioBERT fine-tuning, not runtime
 

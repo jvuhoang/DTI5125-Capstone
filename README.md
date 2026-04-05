@@ -1,8 +1,10 @@
 # NORA — Neurodegenerative Disease Research Assistant
 
-A conversational chatbot for neurodegenerative and neurological disease research. The system combines biomedical named entity recognition (NER), structured clinical evidence extraction (PICOS), machine learning classification, and retrieval-augmented generation (RAG) to deliver answers in two layers: a structured clinical summary drawn from curated disease knowledge bases, followed by supporting evidence retrieved from peer-reviewed PubMed abstracts with PICOS-formatted citations.
+A conversational chatbot for neurodegenerative and neurological disease research. The system combines biomedical named entity recognition (NER), structured clinical evidence extraction (PICOS), machine learning KNN clustering and 3 methods of classification, and retrieval-augmented generation (RAG) to deliver answers in two layers: a structured clinical summary drawn from curated disease knowledge bases, followed by supporting evidence retrieved from peer-reviewed PubMed abstracts with PICOS-formatted citations.
 
-**Supported diseases:** Alzheimer's Disease, Parkinson's Disease, ALS (with Huntington's), Dementia, and Stroke.
+**Live demo:**  https://group2-neuro-chatbot.streamlit.app
+
+**Supported diseases:** Alzheimer's Disease, Parkinson's Disease, ALS & Huntington's, Dementia & MCI, and Stroke.
 
 ---
 
@@ -10,7 +12,7 @@ A conversational chatbot for neurodegenerative and neurological disease research
 
 NORA is built in two stages:
 
-**Offline build (run once):** Downloads ~500 PubMed abstracts, extracts biomedical entities and clinical evidence structure, trains disease classifiers, and builds a semantic search index. This takes 60–90 minutes and only needs to be done once.
+**Offline build (run once):** Downloads ~1200 PubMed abstracts, extracts biomedical entities and clinical evidence structure, trains disease classifiers, and builds a semantic search index. This takes 60–90 minutes and only needs to be done once.
 
 **Runtime (chatbot):** Loads all pre-built models and indexes from disk. Starts in seconds. No re-training, no re-downloading.
 
@@ -28,7 +30,7 @@ NORA uses a two-layer answer system to ensure answers are both clinically ground
 
 ### Layer 1 — Clinical Knowledge Base
 
-The first layer consists of structured knowledge bases embedded in `rag_pipeline.py`, covering five disease groups: Alzheimer's Disease, Parkinson's Disease, ALS (with Huntington's Disease), Dementia and Mild Cognitive Impairment, and Stroke. Each disease group has four dedicated knowledge stores:
+The first layer consists of structured knowledge bases embedded in `rag_pipeline.py`, covering five disease groups: Alzheimer's Disease, Parkinson's Disease, ALS & Huntington's Disease, Dementia & Mild Cognitive Impairment, and Stroke. Each disease group has four dedicated knowledge stores:
 
 | Knowledge base | Content | Used for |
 |---|---|---|
@@ -41,12 +43,11 @@ When a question is received, the intent routing logic in `_generate_picos_answer
 
 ### Layer 2 — PubMed RAG Retrieval
 
-After the clinical summary, NORA appends a **"What the research literature adds"** section. This section retrieves the top-*k* most semantically relevant PubMed abstracts from the FAISS index and presents compact, citation-formatted support sentences — one per study. Each citation is formatted as either:
+After the clinical summary, NORA appends a **Sources** section. This section retrieves the top-*k* most semantically relevant PubMed abstracts from the FAISS index and presents compact, citation-formatted support sentences — one per study. Each citation is formatted as either:
 
 - A clean outcome sentence derived from the abstract's PICOS **Outcome** field, when that field is concise and informative, or
 - A bibliographic reference (*Study title*, study design, year) when the outcome field is absent or too technical.
 
-All cited PMIDs are listed at the end of the answer in a **Sources** block.
 
 ### Why two layers?
 
@@ -72,7 +73,7 @@ No API keys are required. All models run locally.
 Place all project files in a single folder. Open a terminal and navigate to that folder:
 
 ```bash
-cd path/to/DTI5125\ Capstone
+cd path/to/Project Folder
 ```
 
 ### Step 2 — Run the setup script
@@ -103,10 +104,10 @@ This runs all offline phases in sequence:
 
 | Phase | What it does | Approx. time |
 |-------|-------------|-------------|
-| Phase 1 | Downloads ~500 PubMed abstracts into `abstracts.db` | 5–10 min |
+| Phase 1 | Downloads ~1200 PubMed abstracts into `abstracts.db` | 5–10 min |
 | Phase 2A | Extracts disease and chemical entities (scispaCy NER) | 2–3 min |
 | Phase 2B | Extracts PICOS structure from each abstract (bart-large-mnli) | 40–60 min |
-| Phase 3 | Trains disease classifiers (LinearSVC, Logistic Regression) | 2–3 min |
+| Phase 3 | Trains disease classifiers (LinearSVC, Logistic Regression, BioBERT) | 10-15 min |
 | Phase 3b | Builds a biomedical knowledge graph | 1 min |
 | Phase 4 | Generates semantic embeddings and builds FAISS search index | 5–10 min |
 | Phase 6 | Trains PICOS-based intervention recommender (SVD, KNNBasic, NMF) | 1–2 min |

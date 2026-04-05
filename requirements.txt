@@ -1,0 +1,49 @@
+# ── Core web framework ────────────────────────────────────────────────────────
+flask>=2.3.0
+gunicorn>=21.2.0          # production WSGI server for Render deployment
+
+# ── Ontology (existing) ───────────────────────────────────────────────────────
+rdflib>=6.3.2
+
+# ── Data collection ───────────────────────────────────────────────────────────
+requests>=2.31.0
+
+# ── NER — biomedical named entity recognition ─────────────────────────────────
+# IMPORTANT: spacy 3.7.4 only supports Python 3.8–3.11.
+# If you are on Python 3.12+, install spaCy via conda first:
+#   conda install -c conda-forge spacy=3.7.4 -y
+# Then install scispaCy and the BC5CDR model:
+#   pip install scispacy==0.5.4 --no-deps
+#   pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_bc5cdr_md-0.5.4.tar.gz
+# See setup.sh for the full automated setup.
+scispacy==0.5.4
+spacy==3.7.4
+
+# ── Machine learning ──────────────────────────────────────────────────────────
+scikit-learn>=1.3.0
+scipy>=1.11.0
+joblib>=1.3.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# ── Deep learning — BioBERT classifier ───────────────────────────────────────
+torch>=2.0.0
+transformers>=4.40.0
+datasets>=2.14.0          # used by HuggingFace Trainer
+
+# ── RAG — embeddings + vector search ─────────────────────────────────────────
+sentence-transformers>=2.2.2
+faiss-cpu>=1.7.4          # use faiss-gpu if a CUDA GPU is available
+
+# ── LLM API ───────────────────────────────────────────────────────────────────
+# anthropic>=0.25.0       # NOT REQUIRED — PICOS extraction uses HuggingFace (phase2b_picos.py)
+
+# ── Knowledge graph ───────────────────────────────────────────────────────────
+networkx>=3.1
+
+# ── Visualisation ─────────────────────────────────────────────────────────────
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# ── Frontend ──────────────────────────────────────────────────────────────────
+streamlit>=1.28.0

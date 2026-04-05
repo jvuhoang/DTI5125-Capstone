@@ -1,0 +1,1511 @@
+{
+  "nodes": [
+    {
+      "id": "alzheimer",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "alzheimer's disease",
+      "node_type": "disease",
+      "degree": 29
+    },
+    {
+      "id": "dementia",
+      "node_type": "disease",
+      "degree": 17
+    },
+    {
+      "id": "alzheimer disease",
+      "node_type": "disease",
+      "degree": 4
+    },
+    {
+      "id": "parkinson",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "parkinson's disease",
+      "node_type": "disease",
+      "degree": 34
+    },
+    {
+      "id": "rigidity",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "tremor",
+      "node_type": "disease",
+      "degree": 3
+    },
+    {
+      "id": "dopamine",
+      "node_type": "chemical",
+      "degree": 5
+    },
+    {
+      "id": "atrial fibrillation",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "stroke",
+      "node_type": "disease",
+      "degree": 29
+    },
+    {
+      "id": "als and huntington's disease",
+      "node_type": "disease",
+      "degree": 24
+    },
+    {
+      "id": "amyotrophic lateral sclerosis",
+      "node_type": "disease",
+      "degree": 5
+    },
+    {
+      "id": "als",
+      "node_type": "disease",
+      "degree": 17
+    },
+    {
+      "id": "huntington's disease",
+      "node_type": "disease",
+      "degree": 4
+    },
+    {
+      "id": "neurodegenerative disorder",
+      "node_type": "disease",
+      "degree": 14
+    },
+    {
+      "id": "psychiatric",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "lateral sclerosis",
+      "node_type": "disease",
+      "degree": 9
+    },
+    {
+      "id": "depression",
+      "node_type": "disease",
+      "degree": 6
+    },
+    {
+      "id": "anxiety",
+      "node_type": "disease",
+      "degree": 4
+    },
+    {
+      "id": "cognitive deficits",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "cognitive decline",
+      "node_type": "disease",
+      "degree": 7
+    },
+    {
+      "id": "superoxide",
+      "node_type": "chemical",
+      "degree": 2
+    },
+    {
+      "id": "atrophy",
+      "node_type": "disease",
+      "degree": 6
+    },
+    {
+      "id": "alsfrs-r",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "iron",
+      "node_type": "chemical",
+      "degree": 1
+    },
+    {
+      "id": "neurodegenerative disease",
+      "node_type": "disease",
+      "degree": 6
+    },
+    {
+      "id": "weight loss",
+      "node_type": "disease",
+      "degree": 3
+    },
+    {
+      "id": "dysphagia",
+      "node_type": "disease",
+      "degree": 4
+    },
+    {
+      "id": "pneumonia",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "neuroinflammation",
+      "node_type": "disease",
+      "degree": 9
+    },
+    {
+      "id": "inflammation",
+      "node_type": "disease",
+      "degree": 4
+    },
+    {
+      "id": "cognitive impairment",
+      "node_type": "disease",
+      "degree": 15
+    },
+    {
+      "id": "neurodegeneration",
+      "node_type": "disease",
+      "degree": 6
+    },
+    {
+      "id": "depressive",
+      "node_type": "disease",
+      "degree": 3
+    },
+    {
+      "id": "glucose",
+      "node_type": "chemical",
+      "degree": 1
+    },
+    {
+      "id": "edaravone",
+      "node_type": "chemical",
+      "degree": 3
+    },
+    {
+      "id": "death",
+      "node_type": "disease",
+      "degree": 15
+    },
+    {
+      "id": "paralysis",
+      "node_type": "disease",
+      "degree": 4
+    },
+    {
+      "id": "ftd",
+      "node_type": "disease",
+      "degree": 3
+    },
+    {
+      "id": "infection",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "nfl",
+      "node_type": "chemical",
+      "degree": 2
+    },
+    {
+      "id": "cognitive dysfunction",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "pain",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "fatigue",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "obesity",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "neurodegenerative diseases",
+      "node_type": "disease",
+      "degree": 3
+    },
+    {
+      "id": "neurodegenerative disorders",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "disability",
+      "node_type": "disease",
+      "degree": 3
+    },
+    {
+      "id": "hypertension",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "toxicity",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "dementias",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "mci",
+      "node_type": "disease",
+      "degree": 5
+    },
+    {
+      "id": "amyloid",
+      "node_type": "chemical",
+      "degree": 2
+    },
+    {
+      "id": "hyperphosphorylation",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "amyloid beta",
+      "node_type": "chemical",
+      "degree": 1
+    },
+    {
+      "id": "tau",
+      "node_type": "chemical",
+      "degree": 6
+    },
+    {
+      "id": "tauopathies",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "diabetes",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "amyloid-related imaging abnormalities",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "aria",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "dementia and mild cognitive impairment",
+      "node_type": "disease",
+      "degree": 11
+    },
+    {
+      "id": "pd-mci",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "bleeding",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "depressive symptoms",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "atherosclerosis",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "dlb",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "nms",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "autonomic dysfunction",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "parkinson's disease rating scale",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "dyskinesia",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "fog",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "6-ohda",
+      "node_type": "chemical",
+      "degree": 3
+    },
+    {
+      "id": "tyrosine",
+      "node_type": "chemical",
+      "degree": 2
+    },
+    {
+      "id": "parkinson disease",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "parkinsonism",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "levodopa",
+      "node_type": "chemical",
+      "degree": 1
+    },
+    {
+      "id": "motor and non-motor symptoms",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "6-hydroxydopamine",
+      "node_type": "chemical",
+      "degree": 3
+    },
+    {
+      "id": "acute ischemic stroke",
+      "node_type": "disease",
+      "degree": 4
+    },
+    {
+      "id": "ais",
+      "node_type": "disease",
+      "degree": 2
+    },
+    {
+      "id": "ischemic stroke",
+      "node_type": "disease",
+      "degree": 4
+    },
+    {
+      "id": "neurological deficit",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "post-stroke",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "vessel occlusion",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "intracranial hemorrhage",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "poststroke",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "intracerebral hemorrhage",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "tia",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "ischaemic stroke",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "embolic stroke",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "neurological deficits",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "acute ischaemic stroke",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "cerebral infarction",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "hemorrhagic",
+      "node_type": "disease",
+      "degree": 1
+    },
+    {
+      "id": "carotid stenosis",
+      "node_type": "disease",
+      "degree": 1
+    }
+  ],
+  "edges": [
+    {
+      "source": "alzheimer",
+      "target": "alzheimer's disease",
+      "weight": 5
+    },
+    {
+      "source": "alzheimer",
+      "target": "dementia",
+      "weight": 3
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "dementia",
+      "weight": 32
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "alzheimer disease",
+      "weight": 9
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "amyotrophic lateral sclerosis",
+      "weight": 3
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "als and huntington's disease",
+      "weight": 5
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "als",
+      "weight": 4
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "parkinson's disease",
+      "weight": 7
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "neurodegenerative disorders",
+      "weight": 3
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "neurodegenerative diseases",
+      "weight": 7
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "toxicity",
+      "weight": 6
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "death",
+      "weight": 5
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "dementias",
+      "weight": 6
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "inflammation",
+      "weight": 5
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "neurodegeneration",
+      "weight": 5
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "neurodegenerative disorder",
+      "weight": 3
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "neuroinflammation",
+      "weight": 16
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "cognitive decline",
+      "weight": 19
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "mci",
+      "weight": 12
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "cognitive impairment",
+      "weight": 22
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "amyloid",
+      "weight": 14
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "hyperphosphorylation",
+      "weight": 3
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "atrophy",
+      "weight": 5
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "amyloid beta",
+      "weight": 5
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "neurodegenerative disease",
+      "weight": 3
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "tau",
+      "weight": 13
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "tauopathies",
+      "weight": 3
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "amyloid-related imaging abnormalities",
+      "weight": 3
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "aria",
+      "weight": 3
+    },
+    {
+      "source": "alzheimer's disease",
+      "target": "dementia and mild cognitive impairment",
+      "weight": 16
+    },
+    {
+      "source": "dementia",
+      "target": "ftd",
+      "weight": 3
+    },
+    {
+      "source": "dementia",
+      "target": "death",
+      "weight": 8
+    },
+    {
+      "source": "dementia",
+      "target": "dementias",
+      "weight": 4
+    },
+    {
+      "source": "dementia",
+      "target": "neurodegeneration",
+      "weight": 3
+    },
+    {
+      "source": "dementia",
+      "target": "neurodegenerative disorder",
+      "weight": 8
+    },
+    {
+      "source": "dementia",
+      "target": "neuroinflammation",
+      "weight": 4
+    },
+    {
+      "source": "dementia",
+      "target": "alzheimer disease",
+      "weight": 6
+    },
+    {
+      "source": "dementia",
+      "target": "cognitive impairment",
+      "weight": 17
+    },
+    {
+      "source": "dementia",
+      "target": "cognitive decline",
+      "weight": 12
+    },
+    {
+      "source": "dementia",
+      "target": "mci",
+      "weight": 4
+    },
+    {
+      "source": "dementia",
+      "target": "tau",
+      "weight": 4
+    },
+    {
+      "source": "dementia",
+      "target": "dementia and mild cognitive impairment",
+      "weight": 40
+    },
+    {
+      "source": "dementia",
+      "target": "parkinson's disease",
+      "weight": 8
+    },
+    {
+      "source": "dementia",
+      "target": "atrophy",
+      "weight": 3
+    },
+    {
+      "source": "dementia",
+      "target": "dlb",
+      "weight": 3
+    },
+    {
+      "source": "alzheimer disease",
+      "target": "cognitive impairment",
+      "weight": 4
+    },
+    {
+      "source": "alzheimer disease",
+      "target": "dementia and mild cognitive impairment",
+      "weight": 3
+    },
+    {
+      "source": "parkinson",
+      "target": "parkinson's disease",
+      "weight": 4
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "rigidity",
+      "weight": 4
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "dopamine",
+      "weight": 13
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "tremor",
+      "weight": 7
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "neurodegenerative disorders",
+      "weight": 3
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "neurodegenerative diseases",
+      "weight": 5
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "inflammation",
+      "weight": 3
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "pd-mci",
+      "weight": 3
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "dementia and mild cognitive impairment",
+      "weight": 3
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "cognitive decline",
+      "weight": 7
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "cognitive impairment",
+      "weight": 7
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "neurodegenerative disorder",
+      "weight": 14
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "autonomic dysfunction",
+      "weight": 3
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "cognitive dysfunction",
+      "weight": 3
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "depression",
+      "weight": 6
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "anxiety",
+      "weight": 6
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "nms",
+      "weight": 3
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "pain",
+      "weight": 4
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "parkinson's disease rating scale",
+      "weight": 4
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "dyskinesia",
+      "weight": 3
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "death",
+      "weight": 4
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "neurodegeneration",
+      "weight": 5
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "fog",
+      "weight": 4
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "6-ohda",
+      "weight": 4
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "tyrosine",
+      "weight": 4
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "neuroinflammation",
+      "weight": 3
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "atrophy",
+      "weight": 4
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "parkinson disease",
+      "weight": 9
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "parkinsonism",
+      "weight": 3
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "levodopa",
+      "weight": 6
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "motor and non-motor symptoms",
+      "weight": 4
+    },
+    {
+      "source": "parkinson's disease",
+      "target": "6-hydroxydopamine",
+      "weight": 4
+    },
+    {
+      "source": "rigidity",
+      "target": "tremor",
+      "weight": 3
+    },
+    {
+      "source": "tremor",
+      "target": "dopamine",
+      "weight": 3
+    },
+    {
+      "source": "dopamine",
+      "target": "6-ohda",
+      "weight": 3
+    },
+    {
+      "source": "dopamine",
+      "target": "tyrosine",
+      "weight": 3
+    },
+    {
+      "source": "dopamine",
+      "target": "6-hydroxydopamine",
+      "weight": 3
+    },
+    {
+      "source": "atrial fibrillation",
+      "target": "stroke",
+      "weight": 5
+    },
+    {
+      "source": "stroke",
+      "target": "ais",
+      "weight": 7
+    },
+    {
+      "source": "stroke",
+      "target": "acute ischemic stroke",
+      "weight": 14
+    },
+    {
+      "source": "stroke",
+      "target": "hypertension",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "depressive",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "ischemic stroke",
+      "weight": 22
+    },
+    {
+      "source": "stroke",
+      "target": "neurological deficit",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "post-stroke",
+      "weight": 10
+    },
+    {
+      "source": "stroke",
+      "target": "vessel occlusion",
+      "weight": 4
+    },
+    {
+      "source": "stroke",
+      "target": "intracranial hemorrhage",
+      "weight": 5
+    },
+    {
+      "source": "stroke",
+      "target": "poststroke",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "death",
+      "weight": 10
+    },
+    {
+      "source": "stroke",
+      "target": "diabetes",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "intracerebral hemorrhage",
+      "weight": 4
+    },
+    {
+      "source": "stroke",
+      "target": "tia",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "disability",
+      "weight": 7
+    },
+    {
+      "source": "stroke",
+      "target": "ischaemic stroke",
+      "weight": 5
+    },
+    {
+      "source": "stroke",
+      "target": "obesity",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "infection",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "embolic stroke",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "inflammation",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "neurological deficits",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "acute ischaemic stroke",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "cerebral infarction",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "glucose",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "bleeding",
+      "weight": 4
+    },
+    {
+      "source": "stroke",
+      "target": "hemorrhagic",
+      "weight": 4
+    },
+    {
+      "source": "stroke",
+      "target": "carotid stenosis",
+      "weight": 3
+    },
+    {
+      "source": "stroke",
+      "target": "atherosclerosis",
+      "weight": 3
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "amyotrophic lateral sclerosis",
+      "weight": 31
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "als",
+      "weight": 63
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "psychiatric",
+      "weight": 5
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "huntington's disease",
+      "weight": 24
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "neurodegenerative disorder",
+      "weight": 9
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "lateral sclerosis",
+      "weight": 25
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "depression",
+      "weight": 4
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "anxiety",
+      "weight": 3
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "cognitive deficits",
+      "weight": 3
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "superoxide",
+      "weight": 3
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "atrophy",
+      "weight": 4
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "alsfrs-r",
+      "weight": 4
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "dysphagia",
+      "weight": 3
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "weight loss",
+      "weight": 3
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "neurodegenerative disease",
+      "weight": 8
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "neuroinflammation",
+      "weight": 3
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "cognitive impairment",
+      "weight": 6
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "neurodegeneration",
+      "weight": 3
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "edaravone",
+      "weight": 6
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "death",
+      "weight": 11
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "paralysis",
+      "weight": 3
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "ftd",
+      "weight": 3
+    },
+    {
+      "source": "als and huntington's disease",
+      "target": "nfl",
+      "weight": 3
+    },
+    {
+      "source": "amyotrophic lateral sclerosis",
+      "target": "als",
+      "weight": 26
+    },
+    {
+      "source": "amyotrophic lateral sclerosis",
+      "target": "edaravone",
+      "weight": 4
+    },
+    {
+      "source": "amyotrophic lateral sclerosis",
+      "target": "death",
+      "weight": 4
+    },
+    {
+      "source": "als",
+      "target": "lateral sclerosis",
+      "weight": 25
+    },
+    {
+      "source": "als",
+      "target": "depression",
+      "weight": 3
+    },
+    {
+      "source": "als",
+      "target": "neurodegenerative disorder",
+      "weight": 5
+    },
+    {
+      "source": "als",
+      "target": "superoxide",
+      "weight": 3
+    },
+    {
+      "source": "als",
+      "target": "dysphagia",
+      "weight": 3
+    },
+    {
+      "source": "als",
+      "target": "weight loss",
+      "weight": 3
+    },
+    {
+      "source": "als",
+      "target": "neurodegenerative disease",
+      "weight": 9
+    },
+    {
+      "source": "als",
+      "target": "cognitive impairment",
+      "weight": 4
+    },
+    {
+      "source": "als",
+      "target": "edaravone",
+      "weight": 6
+    },
+    {
+      "source": "als",
+      "target": "death",
+      "weight": 10
+    },
+    {
+      "source": "als",
+      "target": "paralysis",
+      "weight": 3
+    },
+    {
+      "source": "als",
+      "target": "alsfrs-r",
+      "weight": 3
+    },
+    {
+      "source": "als",
+      "target": "ftd",
+      "weight": 3
+    },
+    {
+      "source": "als",
+      "target": "nfl",
+      "weight": 3
+    },
+    {
+      "source": "huntington's disease",
+      "target": "psychiatric",
+      "weight": 4
+    },
+    {
+      "source": "huntington's disease",
+      "target": "neurodegenerative disorder",
+      "weight": 6
+    },
+    {
+      "source": "huntington's disease",
+      "target": "atrophy",
+      "weight": 3
+    },
+    {
+      "source": "neurodegenerative disorder",
+      "target": "lateral sclerosis",
+      "weight": 5
+    },
+    {
+      "source": "neurodegenerative disorder",
+      "target": "neuroinflammation",
+      "weight": 5
+    },
+    {
+      "source": "neurodegenerative disorder",
+      "target": "cognitive impairment",
+      "weight": 7
+    },
+    {
+      "source": "neurodegenerative disorder",
+      "target": "neurodegeneration",
+      "weight": 3
+    },
+    {
+      "source": "neurodegenerative disorder",
+      "target": "death",
+      "weight": 3
+    },
+    {
+      "source": "neurodegenerative disorder",
+      "target": "cognitive decline",
+      "weight": 6
+    },
+    {
+      "source": "neurodegenerative disorder",
+      "target": "tau",
+      "weight": 3
+    },
+    {
+      "source": "neurodegenerative disorder",
+      "target": "dementia and mild cognitive impairment",
+      "weight": 4
+    },
+    {
+      "source": "lateral sclerosis",
+      "target": "dysphagia",
+      "weight": 3
+    },
+    {
+      "source": "lateral sclerosis",
+      "target": "weight loss",
+      "weight": 3
+    },
+    {
+      "source": "lateral sclerosis",
+      "target": "neurodegenerative disease",
+      "weight": 8
+    },
+    {
+      "source": "lateral sclerosis",
+      "target": "cognitive impairment",
+      "weight": 3
+    },
+    {
+      "source": "lateral sclerosis",
+      "target": "death",
+      "weight": 4
+    },
+    {
+      "source": "lateral sclerosis",
+      "target": "paralysis",
+      "weight": 3
+    },
+    {
+      "source": "depression",
+      "target": "anxiety",
+      "weight": 6
+    },
+    {
+      "source": "depression",
+      "target": "pain",
+      "weight": 4
+    },
+    {
+      "source": "depression",
+      "target": "fatigue",
+      "weight": 4
+    },
+    {
+      "source": "anxiety",
+      "target": "nms",
+      "weight": 3
+    },
+    {
+      "source": "cognitive deficits",
+      "target": "cognitive impairment",
+      "weight": 3
+    },
+    {
+      "source": "cognitive decline",
+      "target": "mci",
+      "weight": 5
+    },
+    {
+      "source": "cognitive decline",
+      "target": "cognitive impairment",
+      "weight": 13
+    },
+    {
+      "source": "cognitive decline",
+      "target": "dementia and mild cognitive impairment",
+      "weight": 7
+    },
+    {
+      "source": "atrophy",
+      "target": "cognitive impairment",
+      "weight": 3
+    },
+    {
+      "source": "iron",
+      "target": "dementia and mild cognitive impairment",
+      "weight": 3
+    },
+    {
+      "source": "neurodegenerative disease",
+      "target": "death",
+      "weight": 4
+    },
+    {
+      "source": "neurodegenerative disease",
+      "target": "paralysis",
+      "weight": 3
+    },
+    {
+      "source": "dysphagia",
+      "target": "pneumonia",
+      "weight": 3
+    },
+    {
+      "source": "neuroinflammation",
+      "target": "inflammation",
+      "weight": 3
+    },
+    {
+      "source": "neuroinflammation",
+      "target": "amyloid",
+      "weight": 4
+    },
+    {
+      "source": "neuroinflammation",
+      "target": "neurodegeneration",
+      "weight": 3
+    },
+    {
+      "source": "neuroinflammation",
+      "target": "tau",
+      "weight": 4
+    },
+    {
+      "source": "cognitive impairment",
+      "target": "death",
+      "weight": 3
+    },
+    {
+      "source": "cognitive impairment",
+      "target": "mci",
+      "weight": 12
+    },
+    {
+      "source": "cognitive impairment",
+      "target": "dementia and mild cognitive impairment",
+      "weight": 11
+    },
+    {
+      "source": "cognitive impairment",
+      "target": "pd-mci",
+      "weight": 3
+    },
+    {
+      "source": "depressive",
+      "target": "dementia and mild cognitive impairment",
+      "weight": 4
+    },
+    {
+      "source": "depressive",
+      "target": "depressive symptoms",
+      "weight": 3
+    },
+    {
+      "source": "death",
+      "target": "disability",
+      "weight": 4
+    },
+    {
+      "source": "death",
+      "target": "dementia and mild cognitive impairment",
+      "weight": 5
+    },
+    {
+      "source": "death",
+      "target": "acute ischemic stroke",
+      "weight": 4
+    },
+    {
+      "source": "death",
+      "target": "ischemic stroke",
+      "weight": 4
+    },
+    {
+      "source": "neurodegenerative diseases",
+      "target": "tau",
+      "weight": 4
+    },
+    {
+      "source": "disability",
+      "target": "ischemic stroke",
+      "weight": 3
+    },
+    {
+      "source": "mci",
+      "target": "dementia and mild cognitive impairment",
+      "weight": 4
+    },
+    {
+      "source": "tau",
+      "target": "tauopathies",
+      "weight": 3
+    },
+    {
+      "source": "amyloid-related imaging abnormalities",
+      "target": "aria",
+      "weight": 3
+    },
+    {
+      "source": "6-ohda",
+      "target": "6-hydroxydopamine",
+      "weight": 3
+    },
+    {
+      "source": "acute ischemic stroke",
+      "target": "ais",
+      "weight": 7
+    },
+    {
+      "source": "acute ischemic stroke",
+      "target": "ischemic stroke",
+      "weight": 3
+    }
+  ]
+}

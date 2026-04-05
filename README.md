@@ -1,0 +1,217 @@
+# NORA — Neurodegenerative Disease Research Assistant
+
+A conversational AI chatbot that answers questions about neurodegenerative and neurological diseases using evidence from peer-reviewed PubMed literature. The system combines biomedical named entity recognition (NER), structured clinical evidence extraction (PICOS), machine learning classification, and retrieval-augmented generation (RAG) to provide grounded, cited answers.
+
+**Supported diseases:** Alzheimer's Disease, Parkinson's Disease, ALS (with Huntington's), Dementia, and Stroke.
+
+---
+
+## How It Works
+
+NORA is built in two stages:
+
+**Offline build (run once):** Downloads ~500 PubMed abstracts, extracts biomedical entities and clinical evidence structure, trains disease classifiers, and builds a semantic search index. This takes 60–90 minutes and only needs to be done once.
+
+**Runtime (chatbot):** Loads all pre-built models and indexes from disk. Starts in seconds. No re-training, no re-downloading.
+
+When you ask a question, NORA:
+1. Identifies disease-related entities in your query (scispaCy NER)
+2. Searches the abstract database for the most relevant clinical studies (FAISS semantic search)
+3. Formats retrieved evidence using the PICOS framework (Population, Intervention, Comparison, Outcome, Study design)
+4. Generates a grounded, cited answer from that evidence (HuggingFace LLM)
+
+---
+
+## Requirements
+
+- [Anaconda or Miniconda](https://docs.anaconda.com/miniconda/) installed
+- Python 3.11 (handled automatically by `setup.sh`)
+- Internet connection for the first run (downloads models and PubMed data)
+- ~5 GB free disk space
+
+No API keys are required. All models run locally.
+
+---
+
+## Quick Start
+
+### Step 1 — Clone or download the project
+
+Place all project files in a single folder. Open a terminal and navigate to that folder:
+
+```bash
+cd path/to/DTI5125\ Capstone
+```
+
+### Step 2 — Run the setup script
+
+This creates a Python 3.11 conda environment called `nora` and installs all dependencies including the biomedical NER model:
+
+```bash
+bash setup.sh
+```
+
+This takes about 5–10 minutes on a typical internet connection.
+
+### Step 3 — Activate the environment
+
+```bash
+conda activate nora
+```
+
+You need to do this every time you open a new terminal session.
+
+### Step 4 — Build the pipeline (run once)
+
+```bash
+python run_pipeline.py --skip-biobert
+```
+
+This runs all offline phases in sequence:
+
+| Phase | What it does | Approx. time |
+|-------|-------------|-------------|
+| Phase 1 | Downloads ~500 PubMed abstracts into `abstracts.db` | 5–10 min |
+| Phase 2A | Extracts disease and chemical entities (scispaCy NER) | 2–3 min |
+| Phase 2B | Extracts PICOS structure from each abstract (bart-large-mnli) | 40–60 min |
+| Phase 3 | Trains disease classifiers (LinearSVC, Logistic Regression) | 2–3 min |
+| Phase 3b | Builds a biomedical knowledge graph | 1 min |
+| Phase 4 | Generates semantic embeddings and builds FAISS search index | 5–10 min |
+
+> **Note on `--skip-biobert`:** This skips BioBERT fine-tuning, which can take several hours on a CPU. The chatbot works fully without it using the sklearn classifiers. To include BioBERT (requires a GPU), run without the flag.
+
+If the pipeline is interrupted, re-run it from the phase that failed — it will skip everything already completed:
+
+```bash
+python run_pipeline.py --from phase2b
+```
+
+### Step 5 — Start the chatbot
+
+```bash
+streamlit run streamlit_app.py
+```
+
+A browser window opens automatically at `http://localhost:8501`.
+
+---
+
+## File Structure
+
+```
+DTI5125 Capstone/
+│
+├── setup.sh                    # One-time environment setup
+├── run_pipeline.py             # Master build script (run before chatbot)
+├── requirements.txt            # Python dependencies
+│
+├── phase1_collect.py           # PubMed data collection
+├── phase2_ner_picos.py         # Part A: scispaCy NER
+├── phase2b_picos.py            # Part B: PICOS extraction (HuggingFace)
+├── phase3_ml.py                # Clustering + disease classification
+├── phase3b_knowledge_graph.py  # Knowledge graph construction
+├── phase4_rag.py               # Semantic embeddings + FAISS index
+│
+├── rag_pipeline.py             # RAG retriever + answer generator (runtime)
+├── template_filler.py          # Clinical intake template slot-filling (runtime)
+├── conversation_manager.py     # Multi-turn conversation routing (runtime)
+├── symptom_scorer.py           # Ensemble disease probability scoring (runtime)
+├── streamlit_app.py            # Chatbot frontend
+├── webhook.py                  # Flask webhook for Dialogflow integration
+│
+├── abstracts.db                # Generated: SQLite database of abstracts
+├── abstracts.faiss             # Generated: FAISS vector index
+├── faiss_id_map.pkl            # Generated: FAISS position → DB row mapping
+├── disease_classifier.pkl      # Generated: trained SVM classifier
+├── tfidf_vectorizer.pkl        # Generated: fitted TF-IDF vectorizer
+├── label_encoder.pkl           # Generated: disease label encoder
+├── models/sentence_bert/       # Generated: cached Sentence-BERT model
+├── biobert_classifier/         # Generated: fine-tuned BioBERT (if trained)
+│
+├── silhouette_plot.png         # Generated: cluster evaluation chart
+├── cluster_pca_plot.png        # Generated: 2D cluster visualisation
+├── knowledge_graph.png         # Generated: biomedical entity co-occurrence graph
+├── knowledge_graph.gexf        # Generated: graph export for Gephi
+└── knowledge_graph_data.json   # Generated: graph export for D3.js
+```
+
+---
+
+## Using the Chatbot
+
+Once running, the chatbot has two main modes:
+
+**Conversational intake:** Describe symptoms and the chatbot asks follow-up questions to build a structured clinical profile, then estimates the most likely disease category with a confidence score.
+
+**Literature Q&A:** Ask research questions about any of the six diseases. The chatbot retrieves relevant clinical studies and answers using PICOS-structured evidence with citations.
+
+**Example questions:**
+- "What are the early symptoms of Parkinson's disease?"
+- "What interventions have been studied for ALS progression?"
+- "What are the outcomes of levodopa therapy?"
+- "My patient has resting tremor and rigidity — what could this indicate?"
+
+The **PICOS Literature Explorer** in the sidebar lets you search the abstract database directly and filter results by disease or PICOS element (Population, Intervention, Outcome, etc.).
+
+---
+
+## Running Individual Phases
+
+If you want to run a single phase on its own:
+
+```bash
+python phase1_collect.py                    # collect PubMed data
+python phase2_ner_picos.py --part a         # NER only
+python phase2b_picos.py                     # PICOS extraction only
+python phase3_ml.py --skip-biobert          # ML classifiers only
+python phase3b_knowledge_graph.py           # knowledge graph only
+python phase4_rag.py                        # build FAISS index only
+```
+
+---
+
+## Troubleshooting
+
+**`ModuleNotFoundError: No module named 'spacy'`**
+Run `bash setup.sh` first, then `conda activate nora` before running any scripts.
+
+**`conda: command not found`**
+Install [Miniconda](https://docs.anaconda.com/miniconda/) and restart your terminal.
+
+**Phase 2B is slow**
+This is normal on CPU. `facebook/bart-large-mnli` processes ~8–10 abstracts per minute on CPU. The script saves progress to the database every 50 abstracts, so it is safe to interrupt and resume.
+
+**`FileNotFoundError: FAISS index not found`**
+The pipeline has not been run yet, or Phase 4 did not complete. Run `python run_pipeline.py --from phase4`.
+
+**Chatbot starts but gives no answers**
+Check that `abstracts.db`, `abstracts.faiss`, `faiss_id_map.pkl`, `disease_classifier.pkl`, and `tfidf_vectorizer.pkl` all exist in the project folder. If any are missing, re-run the pipeline from the appropriate phase.
+
+**Port 8501 already in use**
+Run on a different port: `streamlit run streamlit_app.py --server.port 8502`
+
+---
+
+## Technology Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Data collection | PubMed E-utilities API |
+| Database | SQLite |
+| Biomedical NER | scispaCy + BC5CDR model |
+| PICOS extraction | facebook/bart-large-mnli (zero-shot) |
+| Disease classification | LinearSVC, Logistic Regression, BioBERT |
+| Semantic search | Sentence-BERT + FAISS |
+| Knowledge graph | NetworkX → Gephi / D3.js |
+| Answer generation | HuggingFace Transformers |
+| Frontend | Streamlit |
+| Webhook | Flask |
+
+---
+
+## Notes
+
+- The pipeline must be run before launching the chatbot for the first time.
+- All models are saved locally after the first run — no repeated downloads.
+- The chatbot does not replace medical advice. All outputs include a disclaimer.
+- BioBERT fine-tuning (`--skip-biobert` off) requires a CUDA-capable GPU and significantly increases training time.

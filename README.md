@@ -109,6 +109,9 @@ This runs all offline phases in sequence:
 | Phase 3 | Trains disease classifiers (LinearSVC, Logistic Regression) | 2–3 min |
 | Phase 3b | Builds a biomedical knowledge graph | 1 min |
 | Phase 4 | Generates semantic embeddings and builds FAISS search index | 5–10 min |
+| Phase 6 | Trains PICOS-based intervention recommender (SVD, KNNBasic, NMF) | 1–2 min |
+
+> **Note on Phase 6:** This phase requires `scikit-surprise`, which must be installed separately (`pip install scikit-surprise`). It is not included in `requirements.txt` because it does not build on Python 3.14 (Streamlit Cloud's environment). Phase 6 is an offline analysis step — the Streamlit app runs without it.
 
 > **Note on `--skip-biobert`:** This skips BioBERT fine-tuning, which can take several hours on a CPU. The chatbot works fully without it using the sklearn classifiers. To include BioBERT (requires a GPU), run without the flag.
 
@@ -143,6 +146,7 @@ DTI5125 Capstone/
 ├── phase3_ml.py                # Clustering + disease classification
 ├── phase3b_knowledge_graph.py  # Knowledge graph construction
 ├── phase4_rag.py               # Semantic embeddings + FAISS index
+├── phase6_recommendersubsys.py # PICOS intervention recommender (offline, local only)
 │
 ├── rag_pipeline.py             # RAG retriever + answer generator (runtime)
 ├── template_filler.py          # Clinical intake template slot-filling (runtime)
@@ -164,7 +168,9 @@ DTI5125 Capstone/
 ├── cluster_pca_plot.png        # Generated: 2D cluster visualisation
 ├── knowledge_graph.png         # Generated: biomedical entity co-occurrence graph
 ├── knowledge_graph.gexf        # Generated: graph export for Gephi
-└── knowledge_graph_data.json   # Generated: graph export for D3.js
+├── knowledge_graph_data.json   # Generated: graph export for D3.js
+├── recommender.pkl             # Generated: trained recommender model (Phase 6)
+└── recommender_comparison.png  # Generated: SVD vs KNNBasic vs NMF evaluation chart
 ```
 
 ---
@@ -198,6 +204,7 @@ python phase2b_picos.py                     # PICOS extraction only
 python phase3_ml.py --skip-biobert          # ML classifiers only
 python phase3b_knowledge_graph.py           # knowledge graph only
 python phase4_rag.py                        # build FAISS index only
+python phase6_recommendersubsys.py          # intervention recommender (requires scikit-surprise)
 ```
 
 ---
@@ -219,6 +226,13 @@ The pipeline has not been run yet, or Phase 4 did not complete. Run `python run_
 **Chatbot starts but gives no answers**
 Check that `abstracts.db`, `abstracts.faiss`, `faiss_id_map.pkl`, `disease_classifier.pkl`, and `tfidf_vectorizer.pkl` all exist in the project folder. If any are missing, re-run the pipeline from the appropriate phase.
 
+**`scikit-surprise` fails to build on Streamlit Cloud**
+`scikit-surprise` uses Cython extensions that do not compile on Python 3.14 (the version used by Streamlit Community Cloud). It is intentionally excluded from `requirements.txt`. Phase 6 is an offline pipeline step — install it locally only:
+```bash
+conda activate nora
+pip install scikit-surprise
+```
+
 **Port 8501 already in use**
 Run on a different port: `streamlit run streamlit_app.py --server.port 8502`
 
@@ -235,6 +249,7 @@ Run on a different port: `streamlit run streamlit_app.py --server.port 8502`
 | Disease classification | LinearSVC, Logistic Regression, BioBERT |
 | Semantic search | Sentence-BERT + FAISS |
 | Knowledge graph | NetworkX → Gephi / D3.js |
+| Recommender system | scikit-surprise (SVD, KNNBasic, NMF) — offline only |
 | Answer generation | HuggingFace Transformers |
 | Frontend | Streamlit |
 | Webhook | Flask |

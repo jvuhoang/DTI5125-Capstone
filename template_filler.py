@@ -55,8 +55,9 @@ class ClinicalTemplate:
     current_medications: Optional[str] = None
 
     def filled_count(self) -> int:
-        """Number of fields that have been filled."""
-        return sum(1 for v in vars(self).values() if v is not None)
+        """Number of fields that have been filled (excludes pending placeholders)."""
+        return sum(1 for v in vars(self).values()
+                   if v is not None and v != "__YES__")
 
     def is_scoreable(self) -> bool:
         """True when the minimum required fields for disease scoring are present."""
@@ -67,8 +68,8 @@ class ClinicalTemplate:
         )
 
     def is_complete(self) -> bool:
-        """True when all 6 fields are filled."""
-        return all(v is not None for v in vars(self).values())
+        """True when all 6 fields are filled (placeholder __YES__ counts as incomplete)."""
+        return all(v is not None and v != "__YES__" for v in vars(self).values())
 
     def to_text(self) -> str:
         """Flatten the template into a single clinical summary string for the scorer."""
@@ -129,6 +130,12 @@ FOLLOW_UP_QUESTIONS = {
 
 def next_question(template: ClinicalTemplate) -> Optional[str]:
     """Return the next follow-up question based on unfilled fields, or None if complete."""
+    # Special case: user confirmed family history exists but gave no detail yet
+    if template.family_history == "__YES__":
+        return (
+            "Which neurological condition was it, and which family member was affected? "
+            "(e.g. 'my mother had Parkinson's' or 'father had Alzheimer's')"
+        )
     for field_name in FIELD_PRIORITY:
         if getattr(template, field_name) is None:
             return FOLLOW_UP_QUESTIONS[field_name]
@@ -264,11 +271,49 @@ def extract_from_text(user_text: str, template: ClinicalTemplate) -> ClinicalTem
             template.age_gender = f"{age} years old, {gender}"
 
     # ── Family history ────────────────────────────────────────────────────────
-    if template.family_history is None:
-        if words & _FAMILY_WORDS or any(p in text_lower for p in [
+    _AFFIRM = {"yes", "yeah", "yep", "yup", "sure", "correct", "there is",
+               "there are", "there was", "we do", "i do"}
+    _DENY   = {"no", "none", "nope", "nah", "never", "not", "n/a", "unknown"}
+
+    if template.family_history == "__YES__":
+        # User previously said "yes" — now capture the actual detail
+        disease_keywords = [
+            "alzheimer", "parkinson", "huntington", "als", "dementia",
+            "stroke", "neurological", "memory", "tremor",
+        ]
+        relative_keywords = [
+            "mother", "father", "parent", "sibling", "brother", "sister",
+            "grandmother", "grandfather", "grandparent", "aunt", "uncle",
+            "cousin", "relative", "family member",
+        ]
+        has_disease  = any(kw in text_lower for kw in disease_keywords)
+        has_relative = any(kw in text_lower for kw in relative_keywords)
+        if has_disease or has_relative:
+            template.family_history = user_text.strip()[:150]
+        elif text_lower.strip() in _DENY or any(
+            p in text_lower for p in ["no condition", "not sure", "don't know",
+                                      "unknown", "unsure"]
+        ):
+            template.family_history = "yes — condition not specified"
+
+    elif template.family_history is None:
+        # Bare affirmative → set placeholder so we can ask for detail next turn
+        if text_lower.strip() in _AFFIRM or any(
+            p in text_lower for p in ["yes there", "yes, there", "yes my",
+                                      "yes his", "yes her", "yes their"]
+        ):
+            template.family_history = "__YES__"
+        # Bare negative → mark as none known
+        elif text_lower.strip() in _DENY or any(
+            p in text_lower for p in ["no family", "no history", "none known",
+                                      "not that i know", "no neurological"]
+        ):
+            template.family_history = "none known"
+        # Substantive answer with family/disease keywords → store directly
+        elif words & _FAMILY_WORDS or any(p in text_lower for p in [
             "runs in the family", "family history", "genetic condition"
         ]):
-            template.family_history = user_text.strip()[:120]
+            template.family_history = user_text.strip()[:150]
 
     # ── Disease-name blocklist — never add a diagnosis name as a symptom ─────────
     # scispaCy NER correctly tags disease names like "Parkinson's Disease" as

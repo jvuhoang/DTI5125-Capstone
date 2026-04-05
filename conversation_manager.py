@@ -296,12 +296,21 @@ _ACKNOWLEDGMENTS = {
 
 
 def _get_newly_filled(before: ClinicalTemplate, after: ClinicalTemplate) -> list:
-    """Return a list of field names that were None before and filled after."""
+    """
+    Return a list of field names that were unfilled before and filled after.
+    A field is considered 'unfilled' if it was None OR the __YES__ placeholder.
+    A field is considered 'filled' if it is now a real, non-placeholder value.
+    This correctly detects the two-step family history flow:
+      None → __YES__   (bare affirmative)
+      __YES__ → real   (detail provided)
+    """
     newly = []
     for field in FIELD_PRIORITY:
-        was_none = getattr(before, field) is None
-        now_set  = getattr(after, field) is not None
-        if was_none and now_set:
+        before_val   = getattr(before, field)
+        after_val    = getattr(after, field)
+        was_unfilled = before_val is None or before_val == "__YES__"
+        now_filled   = after_val is not None and after_val != "__YES__"
+        if was_unfilled and now_filled:
             newly.append(field)
     return newly
 

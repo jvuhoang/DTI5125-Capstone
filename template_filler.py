@@ -464,7 +464,11 @@ def extract_from_text(user_text: str, template: ClinicalTemplate) -> ClinicalTem
 
         is_negative = (
             text_clean in negation_keywords or
-            any(phrase in text_clean for phrase in negation_phrases)
+            any(phrase in text_clean for phrase in negation_phrases) or
+            # Catch replies that START with "none", "no", or "nothing" even when
+            # extra context follows (e.g. "none and my sister has dementia").
+            # Using a word-boundary regex so "someone" doesn't false-match.
+            bool(re.search(r'^(?:none|no|nothing)\b', text_clean))
         )
 
         if is_negative:

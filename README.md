@@ -1,6 +1,6 @@
 # NORA — Neurodegenerative Disease Research Assistant
 
-A conversational AI chatbot that answers questions about neurodegenerative and neurological diseases using evidence from peer-reviewed PubMed literature. The system combines biomedical named entity recognition (NER), structured clinical evidence extraction (PICOS), machine learning classification, and retrieval-augmented generation (RAG) to provide grounded, cited answers.
+A conversational chatbot for neurodegenerative and neurological disease research. The system combines biomedical named entity recognition (NER), structured clinical evidence extraction (PICOS), machine learning classification, and retrieval-augmented generation (RAG) to deliver answers in two layers: a structured clinical summary drawn from curated disease knowledge bases, followed by supporting evidence retrieved from peer-reviewed PubMed abstracts with PICOS-formatted citations.
 
 **Supported diseases:** Alzheimer's Disease, Parkinson's Disease, ALS (with Huntington's), Dementia, and Stroke.
 
@@ -19,6 +19,38 @@ When you ask a question, NORA:
 2. Searches the abstract database for the most relevant clinical studies (FAISS semantic search)
 3. Formats retrieved evidence using the PICOS framework (Population, Intervention, Comparison, Outcome, Study design)
 4. Generates a grounded, cited answer from that evidence (HuggingFace LLM)
+
+---
+
+## Answer Architecture
+
+NORA uses a two-layer answer system to ensure answers are both clinically grounded and supported by peer-reviewed literature.
+
+### Layer 1 — Clinical Knowledge Base
+
+The first layer consists of structured knowledge bases embedded in `rag_pipeline.py`, covering five disease groups: Alzheimer's Disease, Parkinson's Disease, ALS (with Huntington's Disease), Dementia and Mild Cognitive Impairment, and Stroke. Each disease group has four dedicated knowledge stores:
+
+| Knowledge base | Content | Used for |
+|---|---|---|
+| `_DISEASE_SYMPTOMS` | Cardinal symptoms, early signs, and disease-specific presentations | Symptom and "how do I know" questions |
+| `_DISEASE_TREATMENTS` | FDA-approved therapies, symptomatic medications, and non-pharmacological approaches | Treatment and management questions |
+| `_DISEASE_RISK_FACTORS` | Non-modifiable and modifiable risk factors, with population-level evidence notes | Risk, causes, and prevention questions |
+| `_DIAGNOSIS_NOTES` | Clinical diagnostic criteria, standard assessments, and differential diagnosis pointers | Diagnosis and "how is it diagnosed" questions |
+
+When a question is received, the intent routing logic in `_generate_picos_answer()` classifies the query into one of these categories (symptom, treatment, risk, diagnosis, comparison, or progression) and selects the appropriate knowledge base. The response begins with a structured clinical summary drawn from that knowledge base.
+
+### Layer 2 — PubMed RAG Retrieval
+
+After the clinical summary, NORA appends a **"What the research literature adds"** section. This section retrieves the top-*k* most semantically relevant PubMed abstracts from the FAISS index and presents compact, citation-formatted support sentences — one per study. Each citation is formatted as either:
+
+- A clean outcome sentence derived from the abstract's PICOS **Outcome** field, when that field is concise and informative, or
+- A bibliographic reference (*Study title*, study design, year) when the outcome field is absent or too technical.
+
+All cited PMIDs are listed at the end of the answer in a **Sources** block.
+
+### Why two layers?
+
+The clinical knowledge base provides stable, well-established information (e.g., levodopa as first-line Parkinson's therapy; APOE ε4 as the strongest genetic risk factor for Alzheimer's). The RAG layer adds specificity and recency — surfacing recent trials, intervention comparisons, and population-specific findings from the abstract corpus. Together, the two layers produce answers that are both reliable and evidence-linked.
 
 ---
 
@@ -143,7 +175,7 @@ Once running, the chatbot has two main modes:
 
 **Conversational intake:** Describe symptoms and the chatbot asks follow-up questions to build a structured clinical profile, then estimates the most likely disease category with a confidence score.
 
-**Literature Q&A:** Ask research questions about any of the six diseases. The chatbot retrieves relevant clinical studies and answers using PICOS-structured evidence with citations.
+**Literature Q&A:** Ask research questions about any of the supported diseases. The chatbot first presents a structured clinical summary drawn from its knowledge base, then appends supporting evidence retrieved from the PubMed abstract corpus with compact citations.
 
 **Example questions:**
 - "What are the early symptoms of Parkinson's disease?"

@@ -298,6 +298,57 @@ _DISEASE_SYMPTOMS = {
 }
 
 
+# ── Clinical diagnosis notes — how each disease is identified ────────────────
+
+_DIAGNOSIS_NOTES = {
+    "Alzheimer's Disease": (
+        "**How it's clinically diagnosed:** There is no single test for Alzheimer's. "
+        "A neurologist or geriatrician evaluates cognitive function using standardised tools "
+        "(MMSE, MoCA), examines brain imaging (MRI or PET) for atrophy or amyloid plaques, "
+        "and may order blood biomarkers (p-tau181, amyloid-β42/40 ratio). "
+        "Other treatable causes of memory loss are ruled out first."
+    ),
+    "Parkinson's Disease": (
+        "**How it's clinically diagnosed:** There's no definitive blood test. "
+        "A neurologist makes a clinical diagnosis by looking for at least two of the four "
+        "cardinal signs: resting tremor, bradykinesia, rigidity, and postural instability. "
+        "DaTscan imaging (dopamine transporter scan) can support the diagnosis. "
+        "A clear positive response to levodopa therapy also helps confirm Parkinson's."
+    ),
+    "ALS and Huntington's Disease": (
+        "**How ALS is diagnosed:** Nerve conduction studies and EMG (electromyography) are "
+        "combined with clinical examination for both upper and lower motor neuron signs. "
+        "MRI is used to rule out other conditions. "
+        "**How Huntington's is diagnosed:** Confirmed by a genetic blood test detecting "
+        "the expanded CAG repeat in the HTT gene. Genetic counselling is strongly recommended."
+    ),
+    "Dementia and Mild Cognitive Impairment": (
+        "**How it's clinically diagnosed:** Diagnosis involves cognitive testing (MMSE, MoCA), "
+        "blood tests to rule out reversible causes (thyroid, B12, infections), "
+        "and brain imaging (MRI or CT). For Alzheimer's-type dementia, PET scanning or "
+        "CSF biomarkers may confirm amyloid pathology. "
+        "A neuropsychologist or geriatrician typically leads the evaluation."
+    ),
+    "Stroke": (
+        "**How it's diagnosed:** Stroke is a medical emergency — brain imaging (CT or MRI) "
+        "at the hospital is required immediately to confirm the diagnosis and determine "
+        "whether it is ischaemic (blocked artery) or haemorrhagic (bleeding). "
+        "Time is critical: the FAST signs (Face drooping, Arm weakness, Speech difficulty — "
+        "Time to call emergency services) help identify stroke quickly."
+    ),
+}
+
+
+def _get_diagnosis_note(diseases: list) -> str:
+    """Return a clinical diagnosis blurb for the named disease(s)."""
+    parts = []
+    for disease in diseases:
+        note = _DIAGNOSIS_NOTES.get(disease, "")
+        if note:
+            parts.append(note)
+    return "\n\n".join(parts)
+
+
 def _get_symptom_answer(question: str, diseases: list) -> str:
     """
     Return a direct, natural-language symptom overview for the named disease(s).
@@ -352,6 +403,139 @@ def _is_raw_sentence(text: str) -> bool:
     if t.lower().startswith(("the ", "a ", "an ", "we ", "this ", "in ", "between ")):
         return True
     return False
+
+
+def _clean_title(title: str, max_len: int = 80) -> str:
+    """Return a shortened, lowercase version of a paper title for use in prose."""
+    t = title.strip().rstrip(".")
+    if len(t) > max_len:
+        t = t[:max_len].rsplit(" ", 1)[0] + "…"
+    return t
+
+
+def _build_study_sentence(a: dict, idx: int, intent: str) -> str:
+    """
+    Write a single natural-language prose sentence describing what paper [idx]
+    found, tailored to the question intent.  Uses title + clean PICOS fields;
+    never dumps raw abstract text as if it were a synthesised claim.
+    """
+    title   = _clean_title(a.get("title", ""), max_len=80)
+    excerpt = _clean(a.get("abstract", ""), max_len=180)
+    I_raw   = _clean(a["I"])
+    O_raw   = _clean(a["O"])
+    P_raw   = _clean(a["P"])
+    S_raw   = _clean(a["S"], max_len=60)
+
+    # Only use PICOS fields when they are clean named concepts, not raw sentences
+    I = I_raw if I_raw and not _is_raw_sentence(I_raw) else ""
+    O = O_raw if O_raw and not _is_raw_sentence(O_raw) else ""
+    P = P_raw if P_raw and not _is_raw_sentence(P_raw) else ""
+    S = S_raw if S_raw and not _is_raw_sentence(S_raw) else ""
+
+    # Fallback text: short excerpt displayed as a quote, or just the title
+    fallback = f'*"{excerpt}"*' if excerpt else f"*{title}*"
+
+    # For outcome: even when the full O_raw was too long to use as a clean concept,
+    # a truncated version (≤100 chars) is still better than nothing in the treatment path.
+    O_short = ""
+    if O_raw and not O:
+        truncated = _clean(O_raw, max_len=110)
+        if truncated and not truncated.lower().startswith(
+            ("the ", "a ", "an ", "we ", "this ", "in ", "between ")
+        ):
+            O_short = truncated
+
+    if intent == "treatment":
+        if I and O:
+            s = f"**{I}** was studied"
+            if P:
+                s += f" in {P}"
+            s += f", showing that {O.lower()} [{idx}]"
+            if S:
+                s += f" *({S})*"
+            return s + "."
+        elif I and O_short:
+            s = f"**{I}** was studied"
+            if P:
+                s += f" in {P}"
+            s += f", with findings that {O_short.lower()} [{idx}]"
+            if S:
+                s += f" *({S})*"
+            return s + "."
+        elif I:
+            s = f"**{I}** was studied [{idx}]"
+            if P:
+                s += f" in {P}"
+            return s + "."
+        elif O:
+            return f"Research [{idx}] found that {O.lower()}."
+        else:
+            return f"A study [{idx}] on *{title}* reported: {fallback}."
+
+    elif intent in ("comparison", "diagnosis"):
+        if O:
+            s = f"Research [{idx}] found that {O.lower()}"
+            if P:
+                s += f", studied in {P}"
+            return s + "."
+        elif O_short:
+            return f"Research [{idx}] found that {O_short.lower()}."
+        else:
+            return f"A study [{idx}] on *{title}* noted: {fallback}."
+
+    elif intent == "risk":
+        if O:
+            s = f"Evidence [{idx}] suggests that {O.lower()}"
+            if P:
+                s += f" (studied in {P})"
+            return s + "."
+        elif O_short:
+            return f"Evidence [{idx}] suggests that {O_short.lower()}."
+        else:
+            return f"A study [{idx}] on *{title}* found: {fallback}."
+
+    elif intent == "progression":
+        if O:
+            s = f"A study [{idx}] tracking {P if P else 'patients'}"
+            s += f" found that {O.lower()}."
+            if S:
+                s += f" *({S})*"
+            return s
+        elif O_short:
+            return f"Research [{idx}] found that {O_short.lower()}."
+        else:
+            return f"Research [{idx}] on *{title}* reported: {fallback}."
+
+    else:  # general
+        if O:
+            return f"Research [{idx}] found that {O.lower()}."
+        elif I:
+            return f"**{I}** was studied [{idx}]" + (f" in {P}." if P else ".")
+        else:
+            return f"A study [{idx}] on *{title}* reported: {fallback}."
+
+
+def _build_lit_support_sentence(a: dict, idx: int) -> str:
+    """
+    Write a supporting sentence for the literature section of symptom answers.
+    Uses title + clean outcome; falls back to an attributed excerpt quote.
+    """
+    title   = _clean_title(a.get("title", ""), max_len=90)
+    year    = a.get("year", "recent")
+    O       = _clean(a["O"])
+    P       = _clean(a["P"])
+    excerpt = _clean(a.get("abstract", ""), max_len=170)
+
+    # Use outcome if it's a clean finding, not a raw sentence
+    if O and not _is_raw_sentence(O):
+        s = f"Research on *{title}* [{idx}] found that {O.lower()}"
+        if P and not _is_raw_sentence(P):
+            s += f", in {P}"
+        return s + "."
+    # Otherwise use a short excerpt as a quote
+    if excerpt:
+        return f"A {year} study on *{title}* [{idx}] reported: *\"{excerpt}\"*"
+    return f"See [{idx}] *{title}*."
 
 
 # ── Clinical context for common comparison questions ─────────────────────────
@@ -411,12 +595,21 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
     is_comparison = any(w in q for w in [
         "difference", "differences", "compare", "comparing", "contrast",
         "distinguish", "different from", "similar to", "versus", " vs ",
-        "how does", "how do", "what separates", "what's the difference",
+        "what separates", "what's the difference",
     ])
-    is_diagnosis = is_comparison or any(w in q for w in [
-        "how do i know", "diagnos", "tell if", "or dementia", "or alzheimer",
-        "or parkinson", "confirm", "test for", "detected",
+    # "how do I know if I have X" → treat as symptom question (add diagnosis note)
+    is_know_if    = any(p in q for p in [
+        "how do i know", "how would i know", "how can i tell",
+        "tell if i have", "know if i have", "how do you know",
     ])
+    is_symptom_q = is_know_if or any(w in q for w in [
+        "symptom", "sign", "feel", "experience", "what happens", "indicate",
+        "manifest", "present", "look like", "symptoms of",
+    ])
+    is_diagnosis = is_comparison or (not is_symptom_q and any(w in q for w in [
+        "diagnos", "or dementia", "or alzheimer", "or parkinson",
+        "confirm", "test for", "detected",
+    ]))
     is_treatment = any(w in q for w in [
         "treatment", "treat", "therapy", "drug", "medication", "manage",
         "intervention", "help with", "prescribed", "given for",
@@ -429,160 +622,127 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
         "progression", "get worse", "worsen", "prognosis", "long term",
         "survival", "life expectancy", "stage", "advance",
     ])
-    is_symptom_q = any(w in q for w in [
-        "symptom", "sign", "feel", "experience", "what happens", "indicate",
-        "manifest", "present", "look like", "symptoms of",
-    ])
-    # Comparison takes priority; otherwise default to treatment if nothing matched
-    if not any([is_diagnosis, is_treatment, is_risk, is_progression, is_symptom_q]):
+    # Default to treatment if nothing else matched
+    if not any([is_comparison, is_symptom_q, is_diagnosis,
+                is_treatment, is_risk, is_progression]):
         is_treatment = True
 
     n = len(abstracts)
     diseases = sorted({a["disease"] for a in abstracts})
     disease_str = " and ".join(diseases[:2]) if diseases else "neurological conditions"
 
-    # ── Symptom questions: lead with clinical knowledge, back with literature ─
+    # ── Compact, numbered source list (shared by all paths) ───────────────────
+    def _source_block(items):
+        lines = ["\n\n---\n**Sources:**"]
+        for i, a in items:
+            t = a["title"]
+            td = (t[:78] + "…") if len(t) > 78 else t
+            lines.append(f"[{i}] {td} ({a['year']}) — PMID {a['pmid']}")
+        return "\n".join(lines)
+
+    indexed = list(enumerate(abstracts, 1))
+
+    # ── SYMPTOM path: clinical knowledge first, literature support after ──────
     if is_symptom_q and not is_comparison:
         symptom_answer = _get_symptom_answer(question, diseases)
         if symptom_answer:
-            # Compact literature support — just excerpts + source list
-            lit_lines = []
-            for i, a in enumerate(abstracts, 1):
-                excerpt = _clean(a.get("abstract", ""), max_len=180)
-                outcome = _clean(a["O"])
-                # Prefer outcome over raw excerpt when available and clean
-                snippet = outcome if outcome and not _is_raw_sentence(outcome) else excerpt
-                if snippet:
-                    lit_lines.append(f"**[{i}]** *{snippet}*")
+            # Optional "how it's diagnosed" section for "how do I know" questions
+            diag_note = ""
+            if is_know_if:
+                diag_note_text = _get_diagnosis_note(diseases)
+                if diag_note_text:
+                    diag_note = f"\n\n---\n{diag_note_text}"
+
+            # Literature support — one sentence per paper, using title + clean PICOS
+            lit_items = []
+            for i, a in indexed:
+                sentence = _build_lit_support_sentence(a, i)
+                if sentence:
+                    lit_items.append(sentence)
 
             lit_section = ""
-            if lit_lines:
+            if lit_items:
                 lit_section = (
-                    "\n\n---\n"
-                    "**What the research literature adds:**\n\n"
-                    + "\n\n".join(lit_lines[:3])   # top 3 only to keep it readable
+                    "\n\n---\n**What the research literature adds:**\n\n"
+                    + "\n\n".join(lit_items[:4])
                 )
-
-            source_lines = ["\n\n**Sources:**"]
-            for i, a in enumerate(abstracts, 1):
-                title = (a["title"][:70] + "…") if len(a["title"]) > 70 else a["title"]
-                source_lines.append(f"[{i}] {title} ({a['year']}) — PMID {a['pmid']}")
 
             closing = (
                 "\n\n> ⚕️ Symptoms vary between individuals and by stage. "
                 "Only a qualified clinician can provide a formal assessment."
             )
 
+            intro = (
+                f"Here's an overview of the symptoms associated with {disease_str}:\n\n"
+                if not is_know_if else
+                f"Here's what to look out for with {disease_str}:\n\n"
+            )
+
             return (
-                f"Great question. Here's an overview of the symptoms associated "
-                f"with {disease_str}:\n\n"
+                intro
                 + symptom_answer
+                + diag_note
                 + lit_section
-                + "\n".join(source_lines)
+                + _source_block(indexed)
                 + closing
             )
 
-    # ── Opening — direct, conversational ────────────────────────────────────
+    # ── COMPARISON path: clinical blurb first, then per-paper synthesis ───────
     if is_comparison:
         comparison_blurb = _get_comparison_context(question, diseases)
-        if comparison_blurb:
-            opening = (
-                f"Great question — these are often confused. {comparison_blurb}\n\n"
-                f"Here's what {n} studies in the research literature specifically found "
-                f"when comparing these conditions:\n"
-            )
-        else:
-            opening = (
-                f"Good question. These conditions share some overlap but have important "
-                f"distinctions. Here's what {n} studies in the literature found:\n"
-            )
-    elif is_diagnosis:
         opening = (
-            f"That's an important distinction to understand. "
-            f"Here's what {n} studies in the literature say about diagnosis "
-            f"and differentiation for {disease_str}:\n"
+            f"Great question — these are often confused. {comparison_blurb}\n\n"
+            f"Here's what recent studies in the literature specifically found:\n"
+            if comparison_blurb else
+            f"These conditions share some overlap but have important distinctions. "
+            f"Here's what {n} studies in the literature found:\n"
         )
+        intent_key = "comparison"
+
+    # ── TREATMENT path ────────────────────────────────────────────────────────
     elif is_treatment:
         opening = (
-            f"Good question. The literature has examined several approaches. "
-            f"Here's a synthesis of what {n} studies on {disease_str} have found "
-            f"regarding treatment and management:\n"
+            f"Several approaches have been studied for {disease_str}. "
+            f"Here's a synthesis of what the literature shows:\n"
         )
+        intent_key = "treatment"
+
+    # ── RISK path ─────────────────────────────────────────────────────────────
     elif is_risk:
         opening = (
-            f"Several risk factors have been identified in the research. "
-            f"Based on {n} studies, here's what the evidence says:\n"
+            f"Several risk factors have been identified for {disease_str}. "
+            f"Here's what the evidence says across {n} studies:\n"
         )
+        intent_key = "risk"
+
+    # ── PROGRESSION path ──────────────────────────────────────────────────────
     elif is_progression:
         opening = (
-            f"Understanding how these conditions progress is an active area of research. "
-            f"Based on {n} studies, here's what the evidence suggests:\n"
+            f"Understanding how {disease_str} progresses is an active area of research. "
+            f"Here's what {n} studies suggest:\n"
         )
+        intent_key = "progression"
+
+    # ── DIAGNOSIS (explicit) path ─────────────────────────────────────────────
+    elif is_diagnosis:
+        opening = (
+            f"Diagnosis of {disease_str} involves several steps. "
+            f"Here's what recent studies in the literature show:\n"
+        )
+        intent_key = "diagnosis"
+
+    # ── GENERAL / fallback path ───────────────────────────────────────────────
     else:
         opening = (
-            f"Based on {n} studies retrieved from the PubMed literature corpus "
-            f"on {disease_str}, here's what the research shows:\n"
+            f"Based on {n} studies from the PubMed literature on {disease_str}, "
+            f"here's what the research shows:\n"
         )
+        intent_key = "general"
 
-    # ── Body — synthesize findings into prose paragraphs ─────────────────────
+    # ── Body — one synthesised prose sentence per paper ───────────────────────
     body_lines = []
-    for i, a in enumerate(abstracts, 1):
-        outcome      = _clean(a["O"])
-        intervention = _clean(a["I"])
-        population   = _clean(a["P"])
-        study_design = _clean(a["S"], max_len=80)
-        excerpt      = _clean(a.get("abstract", ""), max_len=220)
-
-        # If a PICOS field looks like a raw abstract sentence, don't use it as
-        # a named concept — fall back to excerpt instead.
-        if _is_raw_sentence(intervention):
-            intervention = ""
-        if _is_raw_sentence(outcome) and excerpt:
-            outcome = excerpt   # excerpt is already trimmed to 220 chars
-
-        sentence = ""
-
-        if is_comparison or is_diagnosis:
-            # Outcomes and abstract excerpts are most useful for comparison questions
-            if outcome:
-                sentence = f"One study [{i}] reported: *{outcome}.*"
-                if population and not _is_raw_sentence(population):
-                    sentence += f" This was based on {population.lower()}."
-            elif excerpt:
-                sentence = f"Research [{i}] noted: *{excerpt}.*"
-
-        elif is_treatment:
-            if intervention:
-                sentence = f"Study [{i}] investigated **{intervention}**"
-                if outcome:
-                    sentence += f", finding that {outcome.lower()}."
-                else:
-                    sentence += "."
-                if study_design and not _is_raw_sentence(study_design):
-                    sentence += f" *(Design: {study_design})*"
-            elif outcome:
-                sentence = f"Researchers [{i}] reported: *{outcome}.*"
-            elif excerpt:
-                sentence = f"A study [{i}] found: *{excerpt}.*"
-
-        elif is_risk:
-            if outcome:
-                sentence = f"Evidence [{i}] suggests: *{outcome}.*"
-                if population and not _is_raw_sentence(population):
-                    sentence += f" Studied in {population.lower()}."
-            elif excerpt:
-                sentence = f"A study [{i}] found: *{excerpt}.*"
-
-        else:
-            if outcome:
-                sentence = f"[{i}] *{outcome}.*"
-                if population and not _is_raw_sentence(population):
-                    sentence += f" ({population})"
-            elif intervention:
-                sentence = f"[{i}] Intervention studied: *{intervention}.*"
-            elif excerpt:
-                sentence = f"[{i}] {excerpt}."
-
+    for i, a in indexed:
+        sentence = _build_study_sentence(a, i, intent_key)
         if sentence:
             body_lines.append(sentence)
 
@@ -592,34 +752,18 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
     )
 
     # ── Closing note ─────────────────────────────────────────────────────────
-    if is_comparison:
+    if is_comparison or is_diagnosis:
         closing = (
             "\n\n> ⚕️ **Important:** A definitive diagnosis always requires a qualified "
             "clinician. Workup typically includes cognitive screening (MMSE, MoCA), "
             "neurological examination, blood tests, and brain imaging (MRI or PET)."
-        )
-    elif is_diagnosis:
-        closing = (
-            "\n\n> ⚕️ **A note on diagnosis:** Only a qualified clinician can "
-            "definitively diagnose these conditions. This typically involves cognitive "
-            "testing, blood biomarkers, brain imaging (MRI/PET), and sometimes CSF analysis."
         )
     else:
         closing = (
             "\n\n*For clinical decisions, please consult a qualified healthcare professional.*"
         )
 
-    # ── Compact source list ───────────────────────────────────────────────────
-    source_lines = ["\n\n---\n**Sources:**"]
-    for i, a in enumerate(abstracts, 1):
-        title = a["title"]
-        title_display = (title[:75] + "…") if len(title) > 75 else title
-        source_lines.append(
-            f"[{i}] {title_display} ({a['year']}) — PMID {a['pmid']}"
-        )
-    sources = "\n".join(source_lines)
-
-    return opening + "\n\n" + body + closing + sources
+    return opening + "\n\n" + body + closing + _source_block(indexed)
 
 
 class RAGAnswerGenerator:

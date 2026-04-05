@@ -18,6 +18,7 @@ All conversation history is passed to the LLM on every turn
 so the model has full multi-turn context.
 """
 
+import re
 import random
 from typing import Optional
 import streamlit as st
@@ -60,8 +61,12 @@ def reset_session() -> None:
 
 # ── Intent detection ──────────────────────────────────────────────────────────
 
+# Clinical/research terms that signal a literature question.
+# Question words (what, how, why…) are intentionally NOT included here —
+# they are handled separately by _QUESTION_STARTER_WORDS.
+# Combining question-word detection with medical keyword detection (below)
+# prevents non-medical questions ("what is ice cream?") from matching.
 _FACTUAL_KEYWORDS = {
-    "what", "how", "which", "who", "when", "where", "why",
     "treatment", "therapy", "drug", "medication", "study",
     "research", "trial", "evidence", "intervention", "outcome",
     "cause", "risk", "factor", "literature", "paper", "found",
@@ -212,20 +217,26 @@ def is_factual_query(text: str) -> bool:
     Heuristic: classify user message as a factual/literature question
     (route to RAG) vs. a symptom description (route to template filler).
 
-    Triggers RAG when EITHER:
-      - message contains '?' AND a factual keyword, OR
-      - message starts with a question word AND contains a factual keyword
-        (handles questions typed without a trailing '?')
+    A message is treated as a factual query when ALL THREE conditions hold:
+      1. It is phrased as a question — ends with '?' OR starts with a
+         question/instruction word (what, how, tell, explain …)
+      2. It contains at least one clinical/research keyword (_FACTUAL_KEYWORDS)
+         OR at least one recognised disease/symptom term (_MEDICAL_RELEVANCE_KEYWORDS)
+      3. It has medical relevance — at least one term from _MEDICAL_RELEVANCE_KEYWORDS
+
+    Requiring medical relevance (condition 3) prevents non-medical questions
+    such as "what are the differences between ice cream and milk?" from
+    accidentally triggering a literature retrieval.
     """
     text_lower  = text.lower().strip()
     first_word  = text_lower.split()[0] if text_lower.split() else ""
     has_q_mark  = "?" in text_lower
     has_factual = any(kw in text_lower for kw in _FACTUAL_KEYWORDS)
+    has_medical = any(kw in text_lower for kw in _MEDICAL_RELEVANCE_KEYWORDS)
     starts_with_question_word = first_word in _QUESTION_STARTER_WORDS
 
-    if has_factual and (has_q_mark or starts_with_question_word):
-        return True
-    return False
+    is_question = has_q_mark or starts_with_question_word
+    return is_question and has_medical and (has_factual or has_medical)
 
 
 # Phrases that strongly signal the user is describing their own symptoms
@@ -264,26 +275,22 @@ def is_symptom_description(text: str) -> bool:
 
 def is_off_topic(text: str) -> bool:
     """
-    Returns True when a message has no apparent medical relevance and is
-    clearly casual conversation — not a question, not a symptom report,
-    and contains none of the medical relevance keywords.
+    Returns True when a message has no apparent medical relevance.
 
-    Used to guard the RAG route so random small talk ("I see 2 rabbits outside")
-    does not trigger a literature retrieval, even when the session is in rag mode.
+    The check is purely keyword-based — if none of the ~190 medical/disease/
+    symptom terms in _MEDICAL_RELEVANCE_KEYWORDS appear in the text, the
+    message is considered off-topic regardless of whether it is phrased as a
+    question.  This prevents non-medical questions like
+    "what are the differences between ice cream and milk?" from reaching the
+    RAG pipeline, because they contain a question mark but zero medical content.
     """
-    text_lower = text.lower().strip()
-    if not text_lower:
+    if not text.strip():
         return False
-    # Questions always get a chance to be answered
-    if "?" in text_lower:
-        return False
-    first_word = text_lower.split()[0]
-    if first_word in _QUESTION_STARTER_WORDS:
-        return False
-    # Any medical keyword → let it through
+    text_lower = text.lower()
+    # Any recognised medical keyword → medically relevant, not off-topic
     if any(kw in text_lower for kw in _MEDICAL_RELEVANCE_KEYWORDS):
         return False
-    # No medical signal detected → treat as off-topic
+    # No medical signal at all → off-topic
     return True
 
 
@@ -444,6 +451,40 @@ _ACKNOWLEDGMENTS = {
 }
 
 
+def _is_very_short_duration(duration_text: str) -> bool:
+    """
+    Returns True when the extracted duration is measured only in days —
+    suggesting the symptoms are very recent (less than ~2 weeks old).
+    Used to trigger a monitoring/consult advisory instead of a full assessment.
+
+    Examples that return True:  "a few days", "3 days", "2 days", "days"
+    Examples that return False: "a week", "2 weeks", "several months", "a year"
+    """
+    if not duration_text:
+        return False
+    d = duration_text.lower()
+    has_days   = bool(re.search(r"\bday", d))
+    has_longer = bool(re.search(r"\bweek|\bmonth|\byear|\bwhile|\blong", d))
+    return has_days and not has_longer
+
+
+# Shown when duration is days-only — advise monitoring rather than full assessment
+_SHORT_DURATION_ADVISORY = (
+    "Since these symptoms have only been present for **a few days**, it may be "
+    "too early for a reliable clinical assessment.\n\n"
+    "**If symptoms are mild**, we'd recommend monitoring them over the next "
+    "1–2 weeks. Many short-lived neurological symptoms resolve on their own.\n\n"
+    "**Please consult a doctor promptly if any of the following apply:**\n"
+    "- Symptoms are worsening rapidly or are very severe\n"
+    "- You notice sudden facial drooping, arm weakness, or slurred speech "
+    "(these can be signs of stroke — call emergency services immediately)\n"
+    "- There is difficulty breathing, swallowing, or walking\n"
+    "- You or the patient has a known neurological condition or strong family history\n\n"
+    "Would you like to continue the full assessment anyway, or come back "
+    "if symptoms persist beyond a couple of weeks?"
+)
+
+
 def _get_newly_filled(before: ClinicalTemplate, after: ClinicalTemplate) -> list:
     """
     Return a list of field names that were unfilled before and filled after.
@@ -534,9 +575,17 @@ def handle_turn(
 
     # ── Off-topic guard ────────────────────────────────────────────────────────
     # Intercept messages with no medical relevance before they reach the RAG
-    # pipeline. This prevents casual small talk ("I see 2 rabbits outside")
-    # from triggering a literature retrieval, even when session mode is "rag".
-    if is_off_topic(user_text) and not is_symptom_description(user_text):
+    # pipeline.  IMPORTANT: suppress this guard when an intake is actively in
+    # progress — short answers like "a few days", "moderate", or "65 male"
+    # contain no medical keywords but are valid replies to a chatbot question.
+    # We consider an intake active when the template has at least one field
+    # filled and is not yet complete (i.e. there are still questions to ask).
+    intake_active = (
+        st.session_state.mode == "intake"
+        and template.filled_count() > 0
+        and not template.is_complete()
+    )
+    if is_off_topic(user_text) and not is_symptom_description(user_text) and not intake_active:
         off_topic_reply = (
             "I'm focused on neurological and neurodegenerative conditions. "
             "Feel free to describe symptoms you're concerned about, or ask me "
@@ -599,6 +648,16 @@ def handle_turn(
 
     newly_filled = _get_newly_filled(before_snapshot, template)
     ack          = _acknowledge(newly_filled[0]) if newly_filled else ""
+
+    # ── Short-duration advisory ───────────────────────────────────────────────
+    # If the user just provided a duration measured only in days, the symptoms
+    # are very recent. Rather than continuing straight to a disease assessment,
+    # advise them to monitor and consult a doctor, and offer to continue anyway.
+    if "duration" in newly_filled and _is_very_short_duration(template.duration):
+        st.session_state.history.append(
+            {"role": "assistant", "content": _SHORT_DURATION_ADVISORY}
+        )
+        return _SHORT_DURATION_ADVISORY
 
     # ── Route 3: Still questions to ask → ask next one ───────────────────────
     # All 6 fields are collected before triggering the scorer.

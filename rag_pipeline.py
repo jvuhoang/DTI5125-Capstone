@@ -980,36 +980,138 @@ def _build_lit_support_sentence(a: dict, idx: int) -> str:
 
 
 # ── Clinical context for common comparison questions ─────────────────────────
+# Covers all 15 pairs across the 6 disease groups in the system.
+# Keys use short lowercase tokens that appear in disease names or the question.
 _COMPARISON_CONTEXT = {
-    ("dementia", "parkinson"):
-        "Dementia is a broad syndrome — an umbrella term for symptoms of cognitive "
-        "decline — while Parkinson's disease is a specific neurodegenerative disorder "
-        "primarily affecting movement. That said, they can overlap: up to 80% of people "
-        "with Parkinson's develop dementia over time (called Parkinson's Disease Dementia). "
-        "The key distinction is *what comes first* — in Parkinson's, motor symptoms "
-        "(tremor, rigidity, slow movement) appear before cognitive ones, whereas in "
-        "Alzheimer's and most other dementias, cognitive decline is the first sign.",
 
-    ("alzheimer", "dementia"):
-        "Alzheimer's disease is actually *a type* of dementia — dementia is the umbrella "
-        "term for cognitive decline syndromes, and Alzheimer's is the most common cause "
-        "(accounting for 60–80% of cases). Other types include vascular dementia, Lewy "
-        "body dementia, and frontotemporal dementia. Distinguishing which type you have "
-        "matters because treatment approaches and progression differ.",
-
+    # ── Alzheimer's vs Parkinson's ────────────────────────────────────────────
     ("alzheimer", "parkinson"):
-        "Both are neurodegenerative diseases, but they affect different systems first. "
-        "Alzheimer's primarily targets memory and cognition early on, caused by amyloid "
-        "plaques and tau tangles. Parkinson's primarily targets movement via loss of "
-        "dopamine-producing neurons, causing tremor, rigidity, and slowness. Both can "
-        "eventually affect cognition and behaviour, but the starting profile is distinct.",
+        "Both are progressive neurodegenerative diseases, but they attack different "
+        "parts of the brain. **Alzheimer's** primarily destroys memory and cognition "
+        "first — caused by amyloid plaques and tau tangles building up in the brain. "
+        "**Parkinson's** primarily targets movement by killing dopamine-producing neurons "
+        "in the substantia nigra, causing tremor, rigidity, and slowness. Both can "
+        "eventually affect the full brain, but the *starting* symptoms are very different: "
+        "memory loss first suggests Alzheimer's, tremor and stiffness first suggests Parkinson's.",
 
+    # ── Alzheimer's vs Dementia ───────────────────────────────────────────────
+    ("alzheimer", "dementia"):
+        "Alzheimer's disease is actually **a type of dementia** — dementia is the umbrella "
+        "term for any syndrome of progressive cognitive decline, and Alzheimer's is the most "
+        "common cause (60–80% of cases). Other types include vascular dementia, Lewy body "
+        "dementia, and frontotemporal dementia. Distinguishing the type matters because "
+        "treatments, progression, and genetic risks differ significantly between them.",
+
+    # ── Alzheimer's vs ALS / Huntington's ────────────────────────────────────
+    ("alzheimer", "als"):
+        "**Alzheimer's** and **ALS** are both progressive and incurable, but they affect "
+        "completely different systems. Alzheimer's destroys memory and cognition; ALS destroys "
+        "the motor neurons that control voluntary movement, leading to progressive weakness and "
+        "paralysis. Alzheimer's rarely affects movement until late stages; ALS rarely affects "
+        "cognition (though ~10–15% of ALS patients also develop frontotemporal dementia). "
+        "ALS also progresses faster — median survival is 2–5 years from diagnosis versus "
+        "8–10 years for Alzheimer's.",
+
+    ("alzheimer", "huntington"):
+        "**Alzheimer's** is a late-onset disease (usually after 65) caused by amyloid plaques "
+        "and tau tangles, primarily affecting memory first. **Huntington's** is a genetic "
+        "disorder (inherited from a parent) that typically appears in midlife (30s–50s) and "
+        "affects movement (chorea — uncontrolled jerky movements), mood, and cognition "
+        "simultaneously. A key practical difference: Huntington's can be predicted with a "
+        "genetic test before any symptoms appear; Alzheimer's cannot.",
+
+    # ── Alzheimer's vs Stroke ─────────────────────────────────────────────────
+    ("alzheimer", "stroke"):
+        "**Alzheimer's** and **stroke** can both cause cognitive decline, but their cause "
+        "and onset are very different. Alzheimer's is a neurodegenerative disease — symptoms "
+        "emerge slowly over years. Stroke is an acute vascular event (a clot or bleed in "
+        "the brain) where symptoms appear suddenly — within seconds to minutes. Repeated "
+        "small strokes can cause *vascular dementia*, which can look similar to Alzheimer's "
+        "on the surface but shows up differently on MRI. Brain imaging is essential to "
+        "tell them apart.",
+
+    # ── Parkinson's vs Dementia ───────────────────────────────────────────────
+    ("dementia", "parkinson"):
+        "**Dementia** is a broad syndrome — an umbrella term for progressive cognitive "
+        "decline — while **Parkinson's** is a specific disease that primarily causes movement "
+        "problems (tremor, rigidity, slow movement). The two can overlap: up to 80% of people "
+        "with Parkinson's develop dementia over time (Parkinson's Disease Dementia). The key "
+        "distinction is *what comes first* — Parkinson's starts with motor symptoms; most "
+        "other dementias (especially Alzheimer's) start with memory and cognitive symptoms.",
+
+    # ── Parkinson's vs ALS / Huntington's ────────────────────────────────────
     ("als", "parkinson"):
-        "ALS (amyotrophic lateral sclerosis) and Parkinson's are both neurodegenerative "
-        "but affect very different systems. ALS attacks motor neurons controlling voluntary "
-        "muscles, leading to progressive paralysis. Parkinson's affects the dopamine system, "
-        "primarily causing movement symptoms like tremor and rigidity. ALS progresses faster "
-        "and currently has no disease-modifying treatment.",
+        "**ALS** and **Parkinson's** are both neurodegenerative but affect very different "
+        "systems. ALS destroys the motor neurons that control voluntary muscles, causing "
+        "progressive paralysis and, eventually, respiratory failure. Parkinson's affects "
+        "the dopamine system, causing tremor, rigidity, and slowness — but patients can "
+        "live for decades with it. ALS progresses much faster and has no disease-modifying "
+        "treatment, whereas Parkinson's can be well-controlled with levodopa and other drugs.",
+
+    ("huntington", "parkinson"):
+        "Both cause movement problems, but in different ways. **Huntington's** causes chorea "
+        "— involuntary, jerky, dance-like movements — and is caused by a specific genetic "
+        "mutation (CAG repeat expansion in the HTT gene). **Parkinson's** causes hypokinesia "
+        "— slow, reduced movement, tremor, and rigidity. Huntington's is inherited and has "
+        "a known genetic cause; most Parkinson's cases are sporadic. Both affect mood and "
+        "cognition over time, but Huntington's typically begins in midlife and progresses "
+        "faster.",
+
+    # ── Parkinson's vs Stroke ─────────────────────────────────────────────────
+    ("parkinson", "stroke"):
+        "**Parkinson's** is a slowly progressive neurodegenerative disease caused by dopamine "
+        "loss, while **stroke** is an acute vascular emergency caused by disrupted blood flow "
+        "to the brain. Both can affect movement, but the onset is the key difference: "
+        "Parkinson's symptoms develop over months to years; stroke symptoms appear suddenly "
+        "in minutes. Some stroke survivors develop *vascular parkinsonism* — a stroke-related "
+        "condition that mimics Parkinson's but typically does not respond well to levodopa and "
+        "lacks the classic resting tremor.",
+
+    # ── ALS / Huntington's vs Stroke ─────────────────────────────────────────
+    ("als", "stroke"):
+        "**ALS** and **stroke** can both cause weakness and difficulty speaking or swallowing, "
+        "which is why they are sometimes confused — but they are fundamentally different. "
+        "Stroke is an *acute vascular event*: a sudden interruption of blood supply to the "
+        "brain. Symptoms appear within seconds to minutes and may partially recover. ALS is a "
+        "*progressive neurodegenerative disease*: motor neuron loss builds slowly over months "
+        "and years with no recovery. A stroke is a medical emergency treatable within hours; "
+        "ALS is managed over a lifetime with supportive care and medications like riluzole.",
+
+    ("huntington", "stroke"):
+        "**Huntington's** is a genetic neurodegenerative disease causing chorea (involuntary "
+        "movements), mood changes, and cognitive decline — symptoms that develop gradually "
+        "over years. **Stroke** is an acute vascular event causing sudden neurological "
+        "symptoms (weakness, speech loss, confusion) that develop in minutes. They are rarely "
+        "confused clinically, but both can affect movement and cognition. Huntington's has a "
+        "known genetic cause and can be predicted decades before symptoms; stroke risk is "
+        "managed through blood pressure, cholesterol, and lifestyle.",
+
+    # ── Dementia vs ALS / Huntington's ───────────────────────────────────────
+    ("als", "dementia"):
+        "**Dementia** primarily impairs cognition — memory, language, reasoning. **ALS** "
+        "primarily destroys motor neurons, causing progressive muscle weakness and paralysis. "
+        "They are usually distinct, but about 10–15% of ALS patients also develop "
+        "frontotemporal dementia (FTD-ALS), a combination that affects both movement and "
+        "cognition. Dementia is far more prevalent and slower in progression; ALS is rarer "
+        "and faster, with most patients surviving 2–5 years after diagnosis.",
+
+    ("huntington", "dementia"):
+        "**Huntington's disease** is itself a cause of dementia — it causes cognitive decline "
+        "alongside its characteristic involuntary movements (chorea). What makes it distinct "
+        "from other dementias is its genetic basis (autosomal dominant inheritance) and the "
+        "prominence of motor symptoms and psychiatric changes (depression, irritability, "
+        "obsessive behaviours) that often appear before significant cognitive decline. Most "
+        "other dementias (Alzheimer's, vascular) are not inherited in a predictable way.",
+
+    # ── Dementia vs Stroke ────────────────────────────────────────────────────
+    ("dementia", "stroke"):
+        "**Stroke** and **dementia** are closely linked — stroke is one of the leading causes "
+        "of dementia, called *vascular dementia*. A single large stroke or multiple small "
+        "strokes can damage enough brain tissue to impair memory and thinking. Key differences: "
+        "Alzheimer's-type dementia develops gradually with no obvious trigger; stroke-related "
+        "cognitive decline tends to start suddenly or in step-wise deteriorations after each "
+        "stroke event. Brain MRI can distinguish the two by showing vascular lesions versus "
+        "the typical atrophy pattern of Alzheimer's.",
 }
 
 
@@ -1123,14 +1225,23 @@ def _generate_picos_answer(question: str, abstracts: list[dict]) -> str:
                 + closing
             )
 
-    # ── COMPARISON path: clinical blurb first, then per-paper synthesis ───────
+    # ── COMPARISON path: clinical blurb first; return early when blurb exists ──
     if is_comparison:
         comparison_blurb = _get_comparison_context(question, diseases)
+        if comparison_blurb:
+            closing = (
+                "\n\n> ⚕️ **Important:** A definitive diagnosis always requires a "
+                "qualified clinician. Workup typically includes neurological examination, "
+                "blood tests, and brain imaging (MRI or PET)."
+            )
+            return (
+                f"Here's how these conditions differ:\n\n{comparison_blurb}"
+                + closing
+                + _source_block(indexed)
+            )
+        # No pre-written blurb — fall through to synthesised per-paper answer
         opening = (
-            f"Great question — these are often confused. {comparison_blurb}\n\n"
-            f"Here's what recent studies in the literature specifically found:\n"
-            if comparison_blurb else
-            f"These conditions share some overlap but have important distinctions. "
+            f"These conditions have distinct characteristics. "
             f"Here's what {n} studies in the literature found:\n"
         )
         intent_key = "comparison"

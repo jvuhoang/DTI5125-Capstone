@@ -487,20 +487,30 @@ _SHORT_DURATION_ADVISORY = (
 
 def _get_newly_filled(before: ClinicalTemplate, after: ClinicalTemplate) -> list:
     """
-    Return a list of field names that were unfilled before and filled after.
-    A field is considered 'unfilled' if it was None OR the __YES__ placeholder.
-    A field is considered 'filled' if it is now a real, non-placeholder value.
-    This correctly detects the two-step family history flow:
-      None → __YES__   (bare affirmative)
-      __YES__ → real   (detail provided)
+    Return a list of field names that advanced meaningfully this turn.
+
+    Three transitions all count as "newly filled" so the retry prefix
+    is never shown when the family-history two-step flow is in progress:
+
+      None     → __YES__   bare affirmative received (step 1)
+      None     → real      direct full answer (single-step)
+      __YES__  → real      follow-up detail provided (step 2)
+
+    Transitions that do NOT count:
+      None     → None      nothing extracted
+      __YES__  → __YES__   still waiting for detail (shouldn't happen)
+      real     → real      field already filled, no change
     """
     newly = []
     for field in FIELD_PRIORITY:
-        before_val   = getattr(before, field)
-        after_val    = getattr(after, field)
-        was_unfilled = before_val is None or before_val == "__YES__"
-        now_filled   = after_val is not None and after_val != "__YES__"
-        if was_unfilled and now_filled:
+        before_val  = getattr(before, field)
+        after_val   = getattr(after, field)
+        was_none    = before_val is None
+        was_pending = before_val == "__YES__"
+        now_any     = after_val is not None              # __YES__ or real value
+        now_real    = after_val is not None and after_val != "__YES__"
+
+        if (was_none and now_any) or (was_pending and now_real):
             newly.append(field)
     return newly
 
@@ -508,6 +518,54 @@ def _get_newly_filled(before: ClinicalTemplate, after: ClinicalTemplate) -> list
 def _acknowledge(field: str) -> str:
     """Return a short conversational acknowledgment for a just-filled field."""
     return random.choice(_ACKNOWLEDGMENTS.get(field, ["Got it."]))
+
+
+def _get_diagnostic_sources(
+    template: ClinicalTemplate,
+    scores:   dict,
+    retriever,
+) -> str:
+    """
+    Retrieve up to 3 relevant PubMed abstracts for the top-scoring disease
+    and return a formatted citation block to append after the symptom bars.
+
+    The retrieval query combines the reported symptoms with the disease name
+    so the returned papers are specifically about diagnosing that condition
+    with those symptom patterns.
+
+    Returns an empty string if retrieval fails or no results are found.
+    """
+    if not scores or retriever is None:
+        return ""
+
+    # Identify the top disease and the two runners-up
+    sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    top_disease   = sorted_scores[0][0]
+    symptoms_text = template.primary_symptoms or ""
+
+    # Build a clinically targeted query
+    query = f"diagnosis clinical features {top_disease} {symptoms_text}"
+
+    try:
+        results = retriever.retrieve(query, k=3, filter_disease=top_disease)
+        if not results:
+            results = retriever.retrieve(query, k=3)   # fallback: no disease filter
+    except Exception:
+        return ""
+
+    if not results:
+        return ""
+
+    lines = ["\n\n---", "**Relevant diagnostic literature:**"]
+    for i, r in enumerate(results[:3], 1):
+        title = r.get("title", "Unknown title")
+        year  = r.get("year",  "")
+        pmid  = r.get("pmid",  "")
+        # Trim long titles with ellipsis to keep the chat readable
+        short_title = title[:90] + "…" if len(title) > 90 else title
+        lines.append(f"[{i}] {short_title} ({year}) — PMID {pmid}")
+
+    return "\n".join(lines)
 
 
 def _build_score_intro(template: ClinicalTemplate) -> str:
@@ -689,6 +747,8 @@ def handle_turn(
         try:
             _scores  = score_template(template.to_text(), _models)
             bars_msg = "\n\n" + format_text_scores(_scores, template)
+            # Append diagnostic literature sources for the top disease
+            bars_msg += _get_diagnostic_sources(template, _scores, retriever)
         except Exception:
             bars_msg = ""
         st.session_state.history.append(
@@ -717,6 +777,8 @@ def handle_turn(
         try:
             _scores  = score_template(template.to_text(), _models)
             bars_msg = "\n\n" + format_text_scores(_scores, template)
+            # Append updated diagnostic literature sources
+            bars_msg += _get_diagnostic_sources(template, _scores, retriever)
         except Exception:
             bars_msg = ""
         st.session_state.history.append(

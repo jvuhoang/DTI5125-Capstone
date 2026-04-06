@@ -207,7 +207,8 @@ def format_text_scores(scores: dict, template=None) -> str:
         "compare to patterns in the research literature:\n",
     ]
 
-    for disease, prob in sorted_scores:
+    # Show top 3 diseases only — avoids cluttering the chat with low-probability entries
+    for disease, prob in sorted_scores[:3]:
         pct     = int(prob * 100)
         bar_len = int(pct / 5)          # 20 blocks total (each block = 5%)
         bar     = "█" * bar_len + "░" * (20 - bar_len)

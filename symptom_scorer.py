@@ -37,6 +37,22 @@ def load_sklearn_models():
     return clf, vectorizer, le
 
 
+def load_rf_model():
+    """
+    Load the separately saved Random Forest classifier.
+    Returns the model or None if the file does not exist (e.g. before re-running
+    phase3_ml.py with the updated code).
+    """
+    path = "random_forest_classifier.pkl"
+    if not os.path.exists(path):
+        print(
+            "[INFO] random_forest_classifier.pkl not found — RF will be excluded "
+            "from the ensemble. Re-run phase3_ml.py to generate it."
+        )
+        return None
+    return joblib.load(path)
+
+
 def load_biobert_model():
     """
     Load the fine-tuned BioBERT classifier.
@@ -68,11 +84,24 @@ def load_biobert_model():
 
 
 def load_all_models():
-    """Load all scorer models. Returns a dict of loaded components."""
+    """
+    Load all scorer models. Returns a dict of loaded components.
+
+    Ensemble members (used in score_template):
+      clf        — best sklearn model (LinearSVC or LogisticRegression or RF)
+      clf_rf     — Random Forest model (may be same as clf if RF was best)
+      tok_bert / mod_bert — BioBERT (optional, None if not available)
+
+    All three are averaged equally when present.  If RF is not yet trained
+    (random_forest_classifier.pkl missing), the ensemble falls back to
+    best-sklearn + BioBERT as before.
+    """
     clf, vectorizer, le = load_sklearn_models()
+    clf_rf              = load_rf_model()
     tok_bert, mod_bert  = load_biobert_model()
     return {
         "clf":        clf,
+        "clf_rf":     clf_rf,
         "vectorizer": vectorizer,
         "le":         le,
         "tok_bert":   tok_bert,
@@ -121,9 +150,32 @@ def _biobert_probabilities(text: str, tokenizer, model) -> Optional[np.ndarray]:
         return None
 
 
+def _rf_probabilities(text: str, clf_rf, vectorizer) -> Optional[np.ndarray]:
+    """
+    Get probability distribution from the Random Forest classifier.
+    RF natively supports predict_proba, so no softmax conversion is needed.
+    Returns None if clf_rf is None (model not yet trained).
+    """
+    if clf_rf is None:
+        return None
+    try:
+        vec = vectorizer.transform([text])
+        return clf_rf.predict_proba(vec)[0]
+    except Exception as e:
+        print(f"[WARN] Random Forest inference failed: {e}")
+        return None
+
+
 def score_template(template_text: str, models: dict) -> dict:
     """
     Compute ensemble disease probability for a clinical template text string.
+
+    Ensemble members (averaged equally when all present):
+      1. Best sklearn model (LinearSVC / LogisticRegression / RandomForest)
+      2. Random Forest (dedicated ensemble member — may overlap with #1 if
+         RF happened to be the best model, in which case it gets 2× weight,
+         which is intentional — a stronger model contributes more)
+      3. BioBERT (optional — excluded if model files not present)
 
     Parameters
     ----------
@@ -135,21 +187,31 @@ def score_template(template_text: str, models: dict) -> dict:
     dict mapping disease label → probability (float, sums to ~1.0)
     """
     clf        = models["clf"]
+    clf_rf     = models.get("clf_rf")       # None if not yet trained
     vectorizer = models["vectorizer"]
     le         = models["le"]
     tok_bert   = models["tok_bert"]
     mod_bert   = models["mod_bert"]
 
-    proba_sklearn = _sklearn_probabilities(template_text, clf, vectorizer)
+    # Collect all available probability vectors
+    proba_list = []
 
+    # Member 1 — best sklearn model (always present)
+    proba_list.append(_sklearn_probabilities(template_text, clf, vectorizer))
+
+    # Member 2 — Random Forest (present after re-running phase3_ml.py)
+    proba_rf = _rf_probabilities(template_text, clf_rf, vectorizer)
+    if proba_rf is not None:
+        proba_list.append(proba_rf)
+
+    # Member 3 — BioBERT (optional)
     if tok_bert is not None and mod_bert is not None:
         proba_bert = _biobert_probabilities(template_text, tok_bert, mod_bert)
         if proba_bert is not None:
-            ensemble = (proba_sklearn + proba_bert) / 2.0
-        else:
-            ensemble = proba_sklearn
-    else:
-        ensemble = proba_sklearn
+            proba_list.append(proba_bert)
+
+    # Equal-weight average across all available members
+    ensemble = np.mean(proba_list, axis=0)
 
     return {
         disease: float(prob)

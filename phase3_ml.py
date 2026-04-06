@@ -35,6 +35,7 @@ from sklearn.metrics import (
 from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 
 DB_PATH = "abstracts.db"
 
@@ -169,7 +170,18 @@ def run_clustering(X, labels: list) -> None:
 # ── Part B: Classification ────────────────────────────────────────────────────
 
 def train_sklearn_classifiers(X, y, le):
-    """Train LinearSVC and Logistic Regression. Returns results dict."""
+    """
+    Train LinearSVC, Logistic Regression, and Random Forest.
+    Returns results dict plus train/test splits.
+
+    Random Forest notes:
+    - TF-IDF matrices are sparse; RF converts them to dense internally, which
+      uses more memory on large feature sets. max_features="sqrt" (default for
+      classification) limits each split to sqrt(3000) ≈ 55 features, keeping
+      training manageable.
+    - n_estimators=200 gives a good accuracy/speed trade-off.
+    - n_jobs=-1 uses all available CPU cores.
+    """
     print("\n── sklearn Classifiers ──")
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
@@ -178,15 +190,21 @@ def train_sklearn_classifiers(X, y, le):
     classifiers = {
         "LinearSVC":          LinearSVC(random_state=42, max_iter=2000),
         "LogisticRegression": LogisticRegression(random_state=42, max_iter=1000, C=1.0),
+        "RandomForest":       RandomForestClassifier(
+                                  n_estimators=200,
+                                  max_features="sqrt",
+                                  random_state=42,
+                                  n_jobs=-1,
+                              ),
     }
 
     results = {}
     for name, clf in classifiers.items():
+        print(f"\nTraining {name}...")
         clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
         acc    = accuracy_score(y_test, y_pred)
         results[name] = {"clf": clf, "y_pred": y_pred, "accuracy": acc}
-        print(f"\n{'='*55}")
         print(f"  {name}  |  Accuracy: {acc:.4f}")
         # Use only labels present in the test set to avoid target_names mismatch
         present = sorted(set(y_test) | set(y_pred))
@@ -305,7 +323,7 @@ def plot_comparison(results: dict) -> None:
     """Bar chart comparing test accuracy across all classifiers."""
     names = list(results.keys())
     accs  = [results[n]["accuracy"] for n in names]
-    colors = ["steelblue", "seagreen", "darkorchid"][:len(names)]
+    colors = ["steelblue", "seagreen", "darkorange", "darkorchid"][:len(names)]
 
     plt.figure(figsize=(8, 4))
     bars = plt.bar(names, accs, color=colors, edgecolor="black")
@@ -388,19 +406,40 @@ def run_error_analysis(results: dict, y_test_map: dict, combined: list,
 
 
 def save_best_sklearn(results: dict, vectorizer, le) -> None:
-    """Save the best TF-IDF sklearn model for runtime use in the chatbot."""
+    """
+    Save sklearn models for runtime use in the chatbot.
+
+    Two artefacts are always produced:
+      disease_classifier.pkl        — the best-performing sklearn model
+                                      (LinearSVC, LR, or RandomForest)
+      random_forest_classifier.pkl  — the Random Forest model specifically,
+                                      so symptom_scorer.py can include it as
+                                      a dedicated ensemble member alongside
+                                      the best model and BioBERT.
+      tfidf_vectorizer.pkl          — shared TF-IDF vectorizer
+      label_encoder.pkl             — shared label encoder
+    """
     sklearn_names = [n for n in results if n != "BioBERT"]
     if not sklearn_names:
         print("[WARN] No sklearn classifiers in results — nothing saved.")
         return
+
+    # Save the best overall sklearn model (may or may not be RF)
     best_name = max(sklearn_names, key=lambda n: results[n]["accuracy"])
     joblib.dump(results[best_name]["clf"], "disease_classifier.pkl")
     joblib.dump(vectorizer,                "tfidf_vectorizer.pkl")
     joblib.dump(le,                        "label_encoder.pkl")
-    print(f"\nBest sklearn model ({best_name}) saved:")
+    print(f"\nBest sklearn model ({best_name}, acc={results[best_name]['accuracy']:.4f}) saved:")
     print("  disease_classifier.pkl")
     print("  tfidf_vectorizer.pkl")
     print("  label_encoder.pkl")
+
+    # Always save RF separately for the ensemble (even if it isn't the overall best)
+    if "RandomForest" in results:
+        joblib.dump(results["RandomForest"]["clf"], "random_forest_classifier.pkl")
+        rf_acc = results["RandomForest"]["accuracy"]
+        print(f"\nRandom Forest (acc={rf_acc:.4f}) saved separately:")
+        print("  random_forest_classifier.pkl")
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

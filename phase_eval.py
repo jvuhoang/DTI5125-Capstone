@@ -698,7 +698,8 @@ def _error_4a_classifier_confusion():
 
     # Print matrix
     col_w = 12
-    print(f"\n  {'True \\ Pred':<14}", end="")
+    header_label = "True \\ Pred"
+    print(f"\n  {header_label:<14}", end="")
     for c in classes:
         print(f"{c:>{col_w}}", end="")
     print()

@@ -17,10 +17,12 @@ NORA is built in two stages:
 **Runtime (chatbot):** Loads all pre-built models and indexes from disk. Starts in seconds. No re-training, no re-downloading.
 
 When you ask a question, NORA:
-1. Identifies disease-related entities in your query (scispaCy NER)
+1. Identifies disease-related entities in your query (scispaCy NER) and expands symptom phrases using a curated synonym dictionary
 2. Searches the abstract database for the most relevant clinical studies (FAISS semantic search)
 3. Formats retrieved evidence using the PICOS framework (Population, Intervention, Comparison, Outcome, Study design)
 4. Generates a grounded, cited answer from that evidence (HuggingFace LLM)
+
+For symptom-based intake, NORA scores the collected clinical profile against an ensemble of three trained classifiers (LinearSVC, Logistic Regression, Random Forest) and, if available, BioBERT — returning a probability distribution over the supported disease categories.
 
 ---
 
@@ -107,7 +109,7 @@ This runs all offline phases in sequence:
 | Phase 1 | Downloads ~1200 PubMed abstracts into `abstracts.db` | 5–10 min |
 | Phase 2A | Extracts disease and chemical entities (scispaCy NER) | 2–3 min |
 | Phase 2B | Extracts PICOS structure from each abstract (bart-large-mnli) | 40–60 min |
-| Phase 3 | Trains disease classifiers (LinearSVC, Logistic Regression, BioBERT) | 10-15 min |
+| Phase 3 | Trains disease classifiers (LinearSVC, Logistic Regression, Random Forest, BioBERT); generates accuracy comparison chart, confusion matrices, and error analysis CSV | 10–20 min |
 | Phase 3b | Builds a biomedical knowledge graph | 1 min |
 | Phase 4 | Generates semantic embeddings and builds FAISS search index | 5–10 min |
 | Phase 6 | Trains PICOS-based intervention recommender (SVD, KNNBasic, NMF) | 1–2 min |
@@ -121,6 +123,20 @@ If the pipeline is interrupted, re-run it from the phase that failed — it will
 ```bash
 python run_pipeline.py --from phase2b
 ```
+
+### Step 4b — Run the evaluation suite (optional)
+
+After the pipeline completes, you can evaluate every component independently:
+
+```bash
+python phase_eval.py                  # run all four evaluation sections
+python phase_eval.py --section ner    # NER precision / recall / F1 only
+python phase_eval.py --section rag    # RAG retrieval Hit Rate + ROUGE only
+python phase_eval.py --section rouge  # ROUGE chatbot benchmark only
+python phase_eval.py --section error  # classifier confusion + error audit only
+```
+
+This produces a console report and writes a `error_analysis.csv` file of the lowest-scoring chatbot answers for inspection. No pipeline re-run is required — evaluation reads from the already-built artefacts.
 
 ### Step 5 — Start the chatbot
 
@@ -153,13 +169,17 @@ DTI5125 Capstone/
 ├── template_filler.py          # Clinical intake template slot-filling (runtime)
 ├── conversation_manager.py     # Multi-turn conversation routing (runtime)
 ├── symptom_scorer.py           # Ensemble disease probability scoring (runtime)
-├── streamlit_app.py            # Chatbot frontend
+├── symptom_synonyms.py         # Synonym + paraphrase dictionary for symptom matching
+├── streamlit_app.py            # Chatbot frontend (Streamlit)
+├── index.html                  # Standalone HTML frontend with Dialogflow Messenger + D3.js knowledge graph
 ├── webhook.py                  # Flask webhook for Dialogflow integration
+├── phase_eval.py               # Standalone evaluation module (NER, RAG, ROUGE, error analysis)
 │
 ├── abstracts.db                # Generated: SQLite database of abstracts
 ├── abstracts.faiss             # Generated: FAISS vector index
 ├── faiss_id_map.pkl            # Generated: FAISS position → DB row mapping
-├── disease_classifier.pkl      # Generated: trained SVM classifier
+├── disease_classifier.pkl      # Generated: best-performing sklearn classifier (LinearSVC or LR)
+├── random_forest_classifier.pkl # Generated: Random Forest classifier
 ├── tfidf_vectorizer.pkl        # Generated: fitted TF-IDF vectorizer
 ├── label_encoder.pkl           # Generated: disease label encoder
 ├── models/sentence_bert/       # Generated: cached Sentence-BERT model
@@ -167,9 +187,12 @@ DTI5125 Capstone/
 │
 ├── silhouette_plot.png         # Generated: cluster evaluation chart
 ├── cluster_pca_plot.png        # Generated: 2D cluster visualisation
+├── classifier_comparison.png   # Generated: accuracy bar chart across all classifiers
+├── confusion_matrices.png      # Generated: per-classifier confusion matrix heatmaps
 ├── knowledge_graph.png         # Generated: biomedical entity co-occurrence graph
 ├── knowledge_graph.gexf        # Generated: graph export for Gephi
 ├── knowledge_graph_data.json   # Generated: graph export for D3.js
+├── error_analysis.csv          # Generated: lowest-scoring chatbot answers for review
 ├── recommender.pkl             # Generated: trained recommender model (Phase 6)
 └── recommender_comparison.png  # Generated: SVD vs KNNBasic vs NMF evaluation chart
 ```
@@ -192,6 +215,8 @@ Once running, the chatbot has two main modes:
 
 The **PICOS Literature Explorer** in the sidebar lets you search the abstract database directly and filter results by disease or PICOS element (Population, Intervention, Outcome, etc.).
 
+An alternative **HTML frontend** (`index.html`) is also included. Open it in any browser to access the chatbot via the embedded Dialogflow Messenger widget, and to explore the biomedical knowledge graph rendered as an interactive D3.js force-directed graph.
+
 ---
 
 ## Running Individual Phases
@@ -206,6 +231,9 @@ python phase3_ml.py --skip-biobert          # ML classifiers only
 python phase3b_knowledge_graph.py           # knowledge graph only
 python phase4_rag.py                        # build FAISS index only
 python phase6_recommendersubsys.py          # intervention recommender (requires scikit-surprise)
+python phase_eval.py                        # full evaluation suite (NER, RAG, ROUGE, error analysis)
+python phase_eval.py --section ner          # NER evaluation only
+python phase_eval.py --section error        # classifier confusion + low-ROUGE audit only
 ```
 
 ---
@@ -237,6 +265,15 @@ pip install scikit-surprise
 **Port 8501 already in use**
 Run on a different port: `streamlit run streamlit_app.py --server.port 8502`
 
+**`ModuleNotFoundError: No module named 'rouge_score'`**
+The evaluation module requires `rouge-score`. Install it with:
+```bash
+pip install rouge-score --break-system-packages
+```
+
+**`random_forest_classifier.pkl` not found**
+This file is generated by Phase 3. Re-run `python phase3_ml.py --skip-biobert` to produce it. The chatbot still runs without it — the ensemble falls back to the sklearn LinearSVC/LR model.
+
 ---
 
 ## Technology Stack
@@ -247,7 +284,7 @@ Run on a different port: `streamlit run streamlit_app.py --server.port 8502`
 | Database | SQLite |
 | Biomedical NER | scispaCy + BC5CDR model |
 | PICOS extraction | facebook/bart-large-mnli (zero-shot) |
-| Disease classification | LinearSVC, Logistic Regression, BioBERT |
+| Disease classification | LinearSVC, Logistic Regression, Random Forest, BioBERT |
 | Semantic search | Sentence-BERT + FAISS |
 | Knowledge graph | NetworkX → Gephi / D3.js |
 | Recommender system | scikit-surprise (SVD, KNNBasic, NMF) — offline only |
@@ -263,3 +300,6 @@ Run on a different port: `streamlit run streamlit_app.py --server.port 8502`
 - All models are saved locally after the first run — no repeated downloads.
 - The chatbot does not replace medical advice. All outputs include a disclaimer.
 - BioBERT fine-tuning (`--skip-biobert` off) requires a CUDA-capable GPU and significantly increases training time.
+- `phase_eval.py` is a standalone evaluation tool — it reads from existing pipeline artefacts and does not modify any model or database files.
+- The `symptom_synonyms.py` dictionary maps colloquial and clinical phrases onto canonical symptom terms, improving symptom capture during conversational intake.
+- Three classifiers (LinearSVC, Logistic Regression, Random Forest) are compared in Phase 3. The best-performing model is saved as `disease_classifier.pkl`; the Random Forest model is also saved separately as `random_forest_classifier.pkl` for ensemble use.

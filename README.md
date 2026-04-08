@@ -171,7 +171,6 @@ DTI5125 Capstone/
 ├── symptom_scorer.py           # Ensemble disease probability scoring (runtime)
 ├── symptom_synonyms.py         # Synonym + paraphrase dictionary for symptom matching
 ├── streamlit_app.py            # Chatbot frontend (Streamlit)
-├── index.html                  # Standalone HTML frontend with Dialogflow Messenger + D3.js knowledge graph
 ├── webhook.py                  # Flask webhook for Dialogflow integration
 ├── phase_eval.py               # Standalone evaluation module (NER, RAG, ROUGE, error analysis)
 │
@@ -213,9 +212,7 @@ Once running, the chatbot has two main modes:
 - "What are the outcomes of levodopa therapy?"
 - "My patient has resting tremor and rigidity — what could this indicate?"
 
-The **PICOS Literature Explorer** in the sidebar lets you search the abstract database directly and filter results by disease or PICOS element (Population, Intervention, Outcome, etc.).
-
-An alternative **HTML frontend** (`index.html`) is also included. Open it in any browser to access the chatbot via the embedded Dialogflow Messenger widget, and to explore the biomedical knowledge graph rendered as an interactive D3.js force-directed graph.
+The **PICOS Literature Explorer** in the sidebar lets you search the abstract database directly and filter results by disease or PICOS element (Population, Intervention, Comparison, Outcome, and Study Design).
 
 ---
 
@@ -247,7 +244,7 @@ Run `bash setup.sh` first, then `conda activate nora` before running any scripts
 Install [Miniconda](https://docs.anaconda.com/miniconda/) and restart your terminal.
 
 **Phase 2B is slow**
-This is normal on CPU. `facebook/bart-large-mnli` processes ~8–10 abstracts per minute on CPU. The script saves progress to the database every 50 abstracts, so it is safe to interrupt and resume.
+This is normal on CPU. `facebook/bart-large-mnli` processes ~8–10 abstracts per minute on CPU. The script saves progress to the database every 50 abstracts, so it is safe to interrupt and resume. It is recommended to run on GPU.
 
 **`FileNotFoundError: FAISS index not found`**
 The pipeline has not been run yet, or Phase 4 did not complete. Run `python run_pipeline.py --from phase4`.

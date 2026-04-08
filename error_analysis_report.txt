@@ -1,0 +1,185 @@
+
+======================================================================
+  NORA CHATBOT — SYSTEMATIC ERROR ANALYSIS REPORT
+======================================================================
+  Routing evaluation mode : LIVE (conversation_manager)
+  Total examples analysed : 108
+  Total failures detected : 12  (11.1%)
+  Pass rate               : 88.9%
+
+
+======================================================================
+  SECTION 1 — FAILURE CATEGORIES
+======================================================================
+
+  [ 11   91.7%]  Misunderstood Intent
+  [  0    0.0%]  Poor Context Handling
+  [  0    0.0%]  Generic / Unhelpful
+  [  1    8.3%]  Out-of-Scope Response
+
+
+------------------------------------------------------------
+  1A — Misunderstood Intent
+------------------------------------------------------------
+Found 11 cases where the bot routed to the wrong pathway. The most
+common sub-pattern is a symptom description ending with '?' being sent
+to RAG instead of the intake template filler. This typically happens
+when 'is_factual_query()' detects a question mark and medical keywords
+without first checking whether the message contains a symptom-report
+phrase ('patient has', 'I have', etc.).
+
+  Q: It came on suddenly — I woke up one morning and could not control my left hand.
+     Route expected=intake, actual=off-topic
+     Reason: Medical query (expected 'intake') was blocked as off-topic. is_off_topic() fired — relevant medical keywords may be missing.
+
+  Q: The decline has been gradual but consistent — each month noticeably worse than t
+     Route expected=intake, actual=off-topic
+     Reason: Medical query (expected 'intake') was blocked as off-topic. is_off_topic() fired — relevant medical keywords may be missing.
+
+  Q: My hands are shaking, what should I do?
+     Route expected=intake, actual=rag
+     Reason: Symptom description (possibly with trailing '?') routed to RAG. is_factual_query() fired before the symptom-report guard checked.
+
+  Q: My memory has been getting worse, is that serious?
+     Route expected=intake, actual=rag
+     Reason: Symptom description (possibly with trailing '?') routed to RAG. is_factual_query() fired before the symptom-report guard checked.
+
+  Q: Could this be Parkinson's?
+     Route expected=intake, actual=rag
+     Reason: Symptom description (possibly with trailing '?') routed to RAG. is_factual_query() fired before the symptom-report guard checked.
+
+
+------------------------------------------------------------
+  1B — Poor Context Handling
+------------------------------------------------------------
+Found 0 cases where the bot failed to recognise a short follow-up as a
+reply to the previous intake question. Short answers such as
+'Moderate', 'About 3 months', or 'No medications' have no medical
+keywords and therefore bypass the intake guard, triggering a generic
+'I don't understand' response. The fix is the 'intake_active'
+suppression flag in handle_turn().
+
+
+------------------------------------------------------------
+  1C — Generic / Unhelpful Responses
+------------------------------------------------------------
+Found 0 cases where the bot replied with vague rejection phrases ('I
+don't understand', 'Could you clarify?') instead of a substantive
+response. This often indicates the RAG pipeline found no relevant
+abstracts, or the template filler received input it could not parse,
+with no graceful fallback.
+
+
+------------------------------------------------------------
+  1D — Out-of-Scope Responses
+------------------------------------------------------------
+Found 1 cases where the bot answered a clearly non-medical query with
+clinical or literature content. This is caused by weak off-topic
+detection — the is_off_topic() guard relies purely on keyword
+presence, so any message that happens to share a word with a medical
+term (e.g. 'rabbit' → not detected, but force-linked by the LLM)
+bypasses the redirect.
+
+  Q: 
+     Response snippet: I'm here to help with neurological conditions. Could you share your symptoms?
+
+
+======================================================================
+  SECTION 2 — PATTERN ANALYSIS
+======================================================================
+
+
+------------------------------------------------------------
+  2A — Most Problematic Intents / Topics
+------------------------------------------------------------
+Failures clustered by inferred topic. Topics with both high absolute
+count and high error rate are highest priority for improvement.
+
+  Topic                               Error Rate    # Failures
+  ----------------------------------- ----------  ------------
+  Off-topic / Other                        20.5%             8
+  Alzheimer / Dementia                     16.7%             3
+  Parkinson's                               5.0%             1
+  ALS / Motor Neuron                        0.0%             0
+  General Symptoms                          0.0%             0
+  Huntington's                              0.0%             0
+  Treatment / Medication                    0.0%             0
+  Stroke                                    0.0%             0
+  Diagnosis / Testing                       0.0%             0
+
+
+------------------------------------------------------------
+  2B — Phrasing Style Analysis
+------------------------------------------------------------
+Formal phrasing failures: 0 out of 5 formal queries (0.0%). Casual
+phrasing failures: 0 out of 0 casual queries (0%). Formal clinical
+notes (e.g. 'presenting with cogwheel rigidity') are particularly
+prone to misrouting because their specialist vocabulary overlaps with
+literature keywords, causing is_factual_query() to fire even though
+the message is a symptom description.
+
+
+------------------------------------------------------------
+  2C — Feature Flags in Failures
+------------------------------------------------------------
+  has_report_phrase + has_symptom_kw (routed to RAG):   0  (0.0% of failures)
+  has_question_mark (any)                           :   5  (41.7% of failures)
+  short_answer (≤4 words)                           :   3  (25.0% of failures)
+  no_medical_kw                                     :   8  (66.7% of failures)
+
+
+------------------------------------------------------------
+  2D — Disease-Specific Failure Counts
+------------------------------------------------------------
+  dementia                      : 2 failures
+  parkinson                     : 1 failures
+
+
+======================================================================
+  SECTION 3 — RECOMMENDATIONS
+======================================================================
+
+  [R1] Symptom-report guard in is_factual_query()
+       Add an early-return False in is_factual_query() when the
+       message contains a _SYMPTOM_REPORT_PHRASES match AND a
+       _SYMPTOM_KEYWORDS match. This directly fixes the largest
+       failure cluster: symptom descriptions ending with '?' being
+       sent to RAG.
+
+  [R2] Intake-active suppression in handle_turn()
+       Ensure the 'intake_active' flag suppresses the off-topic
+       guard and the is_factual_query() check when an intake is in
+       progress (template has at least one filled field, is not yet
+       complete). This prevents short follow-up answers ('Moderate',
+       'About 3 months') from being rejected as off-topic.
+
+  [R3] RAG fallback messaging
+       When the RAG pipeline returns no relevant abstracts, return a
+       specific fallback ('No relevant studies found for this
+       query') rather than a generic rejection. This eliminates the
+       'generic_unhelpful' failure class.
+
+  [R4] Strengthen off-topic guard with NLP
+       Replace pure keyword matching with a lightweight sentence-
+       level medical classifier (logistic regression on TF-IDF).
+       This handles messages that share no medical keywords but are
+       clearly clinical ('my hands won't stop shaking').
+
+  [R5] Formal clinical language support
+       Add clinical phrasing patterns to _SYMPTOM_REPORT_PHRASES:
+       'presents with', 'presenting complaint', 'bilateral', 'onset
+       of'. This ensures notes written in medical shorthand route to
+       intake rather than RAG.
+
+  [R6] Context window for short answers
+       Track the last question asked by the bot. If the last
+       question was an intake field prompt (e.g. 'How severe are the
+       symptoms?'), treat the next user message as a reply
+       regardless of its content. This eliminates the entire
+       'poor_context_handling' failure class.
+
+
+======================================================================
+  END OF REPORT
+======================================================================
+  Generated from 108 examples  |  12 failures  |  11.1% error rate

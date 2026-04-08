@@ -207,8 +207,8 @@ Once running, the chatbot has two main modes:
 
 **Example questions:**
 - "What are the early symptoms of Parkinson's disease?"
-- "What interventions have been studied for ALS progression?"
-- "What are the outcomes of levodopa therapy?"
+- "What interventions have been studied for ALS?"
+- "What are the differences between Dementia and Parkinson's?"
 - "My patient has resting tremor and rigidity — what could this indicate?"
 
 The **PICOS Literature Explorer** in the sidebar lets you search the abstract database directly and filter results by disease or PICOS element (Population, Intervention, Comparison, Outcome, and Study Design).

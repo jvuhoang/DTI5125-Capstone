@@ -171,7 +171,6 @@ DTI5125 Capstone/
 ├── symptom_scorer.py           # Ensemble disease probability scoring (runtime)
 ├── symptom_synonyms.py         # Synonym + paraphrase dictionary for symptom matching
 ├── streamlit_app.py            # Chatbot frontend (Streamlit)
-├── webhook.py                  # Flask webhook for Dialogflow integration
 ├── phase_eval.py               # Standalone evaluation module (NER, RAG, ROUGE, error analysis)
 │
 ├── abstracts.db                # Generated: SQLite database of abstracts

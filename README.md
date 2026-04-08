@@ -136,7 +136,37 @@ python phase_eval.py --section rouge  # ROUGE chatbot benchmark only
 python phase_eval.py --section error  # classifier confusion + error audit only
 ```
 
-This produces a console report and writes a `error_analysis.csv` file of the lowest-scoring chatbot answers for inspection. No pipeline re-run is required — evaluation reads from the already-built artefacts.
+This produces a console report and writes an `error_analysis.csv` file of the lowest-scoring chatbot answers for inspection. No pipeline re-run is required — evaluation reads from the already-built artefacts.
+
+### Step 4c — Run the systematic routing error analysis (optional)
+
+`error_analysis.py` is a separate, standalone analysis tool that tests the chatbot's **message routing logic** against a labelled bank of 108 full-sentence queries. Unlike `phase_eval.py`, it does not evaluate classifier accuracy — it tests whether each message is sent to the correct handler (intake, RAG, or off-topic redirect).
+
+```bash
+python error_analysis.py                        # run on the built-in 108-query test bank
+python error_analysis.py --input failures.json  # run on your own collected queries
+```
+
+Each query in a custom `--input` file should follow this format:
+
+```json
+[
+  {"query": "What are the symptoms of late-stage Alzheimer's?", "expected_route": "rag"},
+  {"query": "I have been experiencing tremors for about two months.", "expected_route": "intake"}
+]
+```
+
+The `expected_route` field is optional — if omitted, the analyser infers the correct route from the query's content.
+
+Running the analysis produces three output files:
+
+| File | Contents |
+|------|----------|
+| `error_analysis_report.txt` | Narrative report with failure breakdown, pattern analysis, and six prioritised recommendations |
+| `error_analysis_charts.png` | 4-panel chart: failure type distribution, failures by disease topic, error rate per topic, route failures and phrasing style |
+| `error_analysis_results.json` | Full record-level data for every test query, including detected vs expected route, failure type, and feature flags |
+
+The analyser imports the live routing functions (`is_factual_query`, `is_off_topic`, `is_symptom_description`) directly from `conversation_manager.py`, so results always reflect the current state of the codebase rather than a static snapshot.
 
 ### Step 5 — Start the chatbot
 
@@ -172,6 +202,7 @@ DTI5125 Capstone/
 ├── symptom_synonyms.py         # Synonym + paraphrase dictionary for symptom matching
 ├── streamlit_app.py            # Chatbot frontend (Streamlit)
 ├── phase_eval.py               # Standalone evaluation module (NER, RAG, ROUGE, error analysis)
+├── error_analysis.py           # Systematic routing error analysis (108 labelled test queries)
 │
 ├── abstracts.db                # Generated: SQLite database of abstracts
 ├── abstracts.faiss             # Generated: FAISS vector index
@@ -191,6 +222,9 @@ DTI5125 Capstone/
 ├── knowledge_graph.gexf        # Generated: graph export for Gephi
 ├── knowledge_graph_data.json   # Generated: graph export for D3.js
 ├── error_analysis.csv          # Generated: lowest-scoring chatbot answers for review
+├── error_analysis_report.txt   # Generated: systematic routing error analysis report
+├── error_analysis_charts.png   # Generated: 4-panel failure visualisation (types, topics, rates)
+├── error_analysis_results.json # Generated: raw categorised routing failure data
 ├── recommender.pkl             # Generated: trained recommender model (Phase 6)
 └── recommender_comparison.png  # Generated: SVD vs KNNBasic vs NMF evaluation chart
 ```
@@ -230,6 +264,8 @@ python phase6_recommendersubsys.py          # intervention recommender (requires
 python phase_eval.py                        # full evaluation suite (NER, RAG, ROUGE, error analysis)
 python phase_eval.py --section ner          # NER evaluation only
 python phase_eval.py --section error        # classifier confusion + low-ROUGE audit only
+python error_analysis.py                    # routing error analysis (built-in test bank)
+python error_analysis.py --input my.json    # routing error analysis (custom queries)
 ```
 
 ---

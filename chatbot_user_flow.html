@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NORA — User Flow</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    h2 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+      letter-spacing: 0.3px;
+    }
+    p.sub {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 28px;
+    }
+    svg text { font-family: 'Segoe UI', Arial, sans-serif; }
+  </style>
+</head>
+<body>
+
+<h2>NORA — Neurodegenerative RAG Agent: User Flow</h2>
+<p class="sub">DTI5125 Capstone · Two-mode architecture</p>
+
+<svg width="820" height="980" viewBox="0 0 820 980">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#444"/>
+    </marker>
+    <marker id="arr-l" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#5b4fcf"/>
+    </marker>
+    <marker id="arr-r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#1a7a4a"/>
+    </marker>
+  </defs>
+
+  <!-- ── USER ── -->
+  <rect x="285" y="20" width="250" height="46" rx="23" fill="#1a1a2e" stroke="none"/>
+  <text x="410" y="39" text-anchor="middle" fill="white" font-size="13" font-weight="600">User Query</text>
+  <text x="410" y="56" text-anchor="middle" fill="#aab" font-size="10">Streamlit Frontend</text>
+
+  <!-- User → Conv Manager -->
+  <line x1="410" y1="66" x2="410" y2="104" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ── CONVERSATION MANAGER ── -->
+  <rect x="275" y="108" width="270" height="44" rx="8" fill="#2d2d5e" stroke="none"/>
+  <text x="410" y="127" text-anchor="middle" fill="white" font-size="12" font-weight="600">Conversation Manager</text>
+  <text x="410" y="143" text-anchor="middle" fill="#aac" font-size="10">Multi-turn routing · session state</text>
+
+  <!-- Conv → Decision -->
+  <line x1="410" y1="152" x2="410" y2="190" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ── DECISION DIAMOND ── -->
+  <polygon points="410,194 520,232 410,270 300,232" fill="#f0a500" stroke="none"/>
+  <text x="410" y="228" text-anchor="middle" fill="white" font-size="12" font-weight="700">Research Question?</text>
+  <text x="410" y="244" text-anchor="middle" fill="#fff8e1" font-size="10">keyword + "?" detection</text>
+
+  <!-- NO → left -->
+  <line x1="300" y1="232" x2="185" y2="232" stroke="#5b4fcf" stroke-width="1.8" marker-end="url(#arr-l)"/>
+  <text x="243" y="224" text-anchor="middle" fill="#5b4fcf" font-size="11" font-weight="600">NO</text>
+
+  <!-- YES → right -->
+  <line x1="520" y1="232" x2="635" y2="232" stroke="#1a7a4a" stroke-width="1.8" marker-end="url(#arr-r)"/>
+  <text x="577" y="224" text-anchor="middle" fill="#1a7a4a" font-size="11" font-weight="600">YES</text>
+
+  <!-- ════════════════════════════
+       LEFT: INTAKE COLUMN
+       ════════════════════════════ -->
+  <line x1="185" y1="232" x2="185" y2="290" stroke="#5b4fcf" stroke-width="1.8" marker-end="url(#arr-l)"/>
+
+  <!-- Header -->
+  <text x="185" y="284" text-anchor="middle" fill="#5b4fcf" font-size="10" font-weight="700" letter-spacing="0.8">SYMPTOM INTAKE</text>
+
+  <!-- Box 1: Template Filler -->
+  <rect x="65" y="295" width="240" height="52" rx="7" fill="#ede9ff" stroke="#5b4fcf" stroke-width="1.4"/>
+  <text x="185" y="316" text-anchor="middle" fill="#2d1b8e" font-size="12" font-weight="600">Clinical Template Filler</text>
+  <text x="185" y="333" text-anchor="middle" fill="#555" font-size="10">6 slots: symptoms, age, onset,</text>
+  <text x="185" y="346" text-anchor="middle" fill="#555" font-size="10">severity, progression, notes</text>
+
+  <!-- loop arrow -->
+  <path d="M305,321 Q340,321 340,375 Q340,430 305,430" stroke="#5b4fcf" stroke-width="1.2" fill="none" stroke-dasharray="4,3" marker-end="url(#arr-l)"/>
+  <text x="352" y="375" fill="#5b4fcf" font-size="9" font-style="italic" text-anchor="middle" transform="rotate(90,352,375)">follow-up Q</text>
+
+  <line x1="185" y1="347" x2="185" y2="387" stroke="#5b4fcf" stroke-width="1.5" marker-end="url(#arr-l)"/>
+  <text x="200" y="372" fill="#888" font-size="9" font-style="italic">all slots filled</text>
+
+  <!-- Box 2: Symptom Scorer -->
+  <rect x="65" y="391" width="240" height="52" rx="7" fill="#ede9ff" stroke="#5b4fcf" stroke-width="1.4"/>
+  <text x="185" y="412" text-anchor="middle" fill="#2d1b8e" font-size="12" font-weight="600">Symptom Scorer</text>
+  <text x="185" y="428" text-anchor="middle" fill="#555" font-size="10">scispaCy NER + synonym expansion</text>
+  <text x="185" y="441" text-anchor="middle" fill="#555" font-size="10">symptom_synonyms.py</text>
+
+  <line x1="185" y1="443" x2="185" y2="483" stroke="#5b4fcf" stroke-width="1.5" marker-end="url(#arr-l)"/>
+
+  <!-- Box 3: Ensemble Classifiers -->
+  <rect x="65" y="487" width="240" height="62" rx="7" fill="#ede9ff" stroke="#5b4fcf" stroke-width="1.4"/>
+  <text x="185" y="507" text-anchor="middle" fill="#2d1b8e" font-size="12" font-weight="600">Ensemble Classifiers</text>
+  <text x="185" y="523" text-anchor="middle" fill="#555" font-size="10">LinearSVC · Logistic Regression</text>
+  <text x="185" y="537" text-anchor="middle" fill="#555" font-size="10">Random Forest · BioBERT (optional)</text>
+  <text x="185" y="548" text-anchor="middle" fill="#888" font-size="9">TF-IDF + PICOS features</text>
+
+  <line x1="185" y1="549" x2="185" y2="589" stroke="#5b4fcf" stroke-width="1.5" marker-end="url(#arr-l)"/>
+
+  <!-- Box 4: Intake Output -->
+  <rect x="65" y="593" width="240" height="44" rx="7" fill="#2d1b8e" stroke="none"/>
+  <text x="185" y="612" text-anchor="middle" fill="white" font-size="12" font-weight="600">Disease Prediction</text>
+  <text x="185" y="628" text-anchor="middle" fill="#aac" font-size="10">Probability scores across disease categories</text>
+
+
+  <!-- ════════════════════════════
+       RIGHT: RAG COLUMN
+       ════════════════════════════ -->
+  <line x1="635" y1="232" x2="635" y2="290" stroke="#1a7a4a" stroke-width="1.8" marker-end="url(#arr-r)"/>
+
+  <!-- Header -->
+  <text x="635" y="284" text-anchor="middle" fill="#1a7a4a" font-size="10" font-weight="700" letter-spacing="0.8">LITERATURE Q&amp;A</text>
+
+  <!-- Box A: NER + Intent -->
+  <rect x="515" y="295" width="240" height="52" rx="7" fill="#e6f4ee" stroke="#1a7a4a" stroke-width="1.4"/>
+  <text x="635" y="315" text-anchor="middle" fill="#0d4a2a" font-size="12" font-weight="600">NER + Intent Router</text>
+  <text x="635" y="331" text-anchor="middle" fill="#555" font-size="10">scispaCy (DISEASE, CHEMICAL)</text>
+  <text x="635" y="346" text-anchor="middle" fill="#555" font-size="10">6 intent categories (symptom, treatment…)</text>
+
+  <line x1="635" y1="347" x2="635" y2="387" stroke="#1a7a4a" stroke-width="1.5" marker-end="url(#arr-r)"/>
+
+  <!-- Box B: Layer 1 KB -->
+  <rect x="515" y="391" width="240" height="52" rx="7" fill="#e6f4ee" stroke="#1a7a4a" stroke-width="1.4"/>
+  <text x="635" y="411" text-anchor="middle" fill="#0d4a2a" font-size="12" font-weight="600">Layer 1: Knowledge Base</text>
+  <text x="635" y="427" text-anchor="middle" fill="#555" font-size="10">Structured clinical summaries</text>
+  <text x="635" y="441" text-anchor="middle" fill="#555" font-size="10">5 diseases × 4 stores (deterministic)</text>
+
+  <line x1="635" y1="443" x2="635" y2="483" stroke="#1a7a4a" stroke-width="1.5" marker-end="url(#arr-r)"/>
+
+  <!-- Box C: FAISS -->
+  <rect x="515" y="487" width="240" height="52" rx="7" fill="#e6f4ee" stroke="#1a7a4a" stroke-width="1.4"/>
+  <text x="635" y="507" text-anchor="middle" fill="#0d4a2a" font-size="12" font-weight="600">Layer 2: FAISS Retriever</text>
+  <text x="635" y="523" text-anchor="middle" fill="#555" font-size="10">Sentence-BERT embeddings</text>
+  <text x="635" y="537" text-anchor="middle" fill="#555" font-size="10">Top-k PubMed abstracts · PICOS fields</text>
+
+  <line x1="635" y1="539" x2="635" y2="579" stroke="#1a7a4a" stroke-width="1.5" marker-end="url(#arr-r)"/>
+
+  <!-- Box D: LLM -->
+  <rect x="515" y="583" width="240" height="52" rx="7" fill="#e6f4ee" stroke="#1a7a4a" stroke-width="1.4"/>
+  <text x="635" y="603" text-anchor="middle" fill="#0d4a2a" font-size="12" font-weight="600">HuggingFace LLM</text>
+  <text x="635" y="619" text-anchor="middle" fill="#555" font-size="10">PICOS-structured prompt</text>
+  <text x="635" y="633" text-anchor="middle" fill="#555" font-size="10">Grounded cited answer (local inference)</text>
+
+  <line x1="635" y1="635" x2="635" y2="670" stroke="#1a7a4a" stroke-width="1.5" marker-end="url(#arr-r)"/>
+
+  <!-- Box E: RAG Output -->
+  <rect x="515" y="674" width="240" height="44" rx="7" fill="#0d4a2a" stroke="none"/>
+  <text x="635" y="692" text-anchor="middle" fill="white" font-size="12" font-weight="600">RAG Response</text>
+  <text x="635" y="709" text-anchor="middle" fill="#8ecaa3" font-size="10">Clinical summary + PICOS citations (PMID)</text>
+
+  <!-- ════════════════════════════
+       BOTTOM: DB + SIDEBAR
+       ════════════════════════════ -->
+
+  <!-- Lines from both outputs down to DB -->
+  <line x1="185" y1="637" x2="185" y2="790" stroke="#bbb" stroke-width="1.2" stroke-dasharray="5,3"/>
+  <line x1="185" y1="790" x2="357" y2="790" stroke="#bbb" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#arr)"/>
+
+  <line x1="635" y1="718" x2="635" y2="790" stroke="#bbb" stroke-width="1.2" stroke-dasharray="5,3"/>
+  <line x1="635" y1="790" x2="463" y2="790" stroke="#bbb" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#arr)"/>
+
+  <!-- DB cylinder -->
+  <rect x="285" y="765" width="250" height="50" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.4"/>
+  <ellipse cx="410" cy="765" rx="125" ry="13" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.4"/>
+  <ellipse cx="410" cy="815" rx="125" ry="13" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.4"/>
+  <text x="410" y="787" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="600">SQLite · abstracts.db</text>
+  <text x="410" y="803" text-anchor="middle" fill="#555" font-size="10">~1200 PubMed abstracts · NER + PICOS columns</text>
+
+  <!-- DB → PICOS explorer -->
+  <line x1="410" y1="828" x2="410" y2="866" stroke="#444" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- PICOS Explorer bar -->
+  <rect x="230" y="870" width="360" height="42" rx="7" fill="#fff8e1" stroke="#f0a500" stroke-width="1.4"/>
+  <text x="410" y="888" text-anchor="middle" fill="#7a4f00" font-size="12" font-weight="600">PICOS Literature Explorer</text>
+  <text x="410" y="904" text-anchor="middle" fill="#888" font-size="10">Sidebar · direct DB search · filter by disease or PICOS element</text>
+
+  <!-- ── DIVIDER LINE between cols ── -->
+  <line x1="410" y1="270" x2="410" y2="730" stroke="#ddd" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- ── COLUMN HEADERS ── -->
+  <rect x="65" y="258" width="240" height="24" rx="5" fill="#5b4fcf"/>
+  <text x="185" y="275" text-anchor="middle" fill="white" font-size="11" font-weight="700">SYMPTOM INTAKE MODE</text>
+
+  <rect x="515" y="258" width="240" height="24" rx="5" fill="#1a7a4a"/>
+  <text x="635" y="275" text-anchor="middle" fill="white" font-size="11" font-weight="700">LITERATURE Q&amp;A MODE</text>
+
+</svg>
+
+</body>
+</html>

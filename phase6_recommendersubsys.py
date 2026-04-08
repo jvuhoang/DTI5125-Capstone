@@ -2,8 +2,7 @@
 Phase 6 — Recommender Sub-System (Surprise Library)
 ====================================================
 What this does:
-  This is a sub-system of a recommender system as specified
-  in the professor's instructions. Rather than forcing a
+  This is a sub-system of a recommender system. Rather than forcing a
   collaborative filtering analogy onto clinical literature,
   this implements a PICOS profile similarity recommender:
 

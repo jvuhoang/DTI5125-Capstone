@@ -87,6 +87,18 @@ _QUESTION_STARTER_WORDS = {
     "tell", "explain", "describe", "list", "compare",
 }
 
+# Phrases that strongly signal the user is describing symptoms (own or a patient's).
+# Defined here (before is_factual_query) so both routing functions can use them.
+_SYMPTOM_REPORT_PHRASES = {
+    "i have", "i've been", "i've had", "i am having", "i'm having",
+    "i experience", "i feel", "i notice", "i've noticed",
+    "i suffer", "i'm suffering", "patient has", "patient is",
+    "my patient", "the patient",
+    "he has", "she has", "they have", "he is", "she is",
+    "started having", "been experiencing", "been feeling",
+    "also have", "i also", "as well as",
+}
+
 # ── Medical relevance keyword set ────────────────────────────────────────────
 # If NONE of these appear and the message isn't a question or symptom report,
 # we treat it as off-topic small talk and respond with a polite redirect.
@@ -229,6 +241,17 @@ def is_factual_query(text: str) -> bool:
     accidentally triggering a literature retrieval.
     """
     text_lower  = text.lower().strip()
+
+    # ── Symptom-report guard ──────────────────────────────────────────────────
+    # Messages like "My patient has resting tremor — what could this indicate?"
+    # contain a symptom-report phrase AND symptoms.  They should go to intake
+    # (template filler), NOT to RAG — even though they end with "?".
+    has_report_phrase = any(ph in text_lower for ph in _SYMPTOM_REPORT_PHRASES)
+    if has_report_phrase:
+        has_symptom = any(kw in text_lower for kw in _SYMPTOM_KEYWORDS)
+        if has_symptom:
+            return False   # → route to intake, not RAG
+
     first_word  = text_lower.split()[0] if text_lower.split() else ""
     has_q_mark  = "?" in text_lower
     has_factual = any(kw in text_lower for kw in _FACTUAL_KEYWORDS)
@@ -237,17 +260,6 @@ def is_factual_query(text: str) -> bool:
 
     is_question = has_q_mark or starts_with_question_word
     return is_question and has_medical and (has_factual or has_medical)
-
-
-# Phrases that strongly signal the user is describing their own symptoms
-_SYMPTOM_REPORT_PHRASES = {
-    "i have", "i've been", "i've had", "i am having", "i'm having",
-    "i experience", "i feel", "i notice", "i've noticed",
-    "i suffer", "i'm suffering", "patient has", "patient is",
-    "he has", "she has", "they have", "he is", "she is",
-    "started having", "been experiencing", "been feeling",
-    "also have", "i also", "as well as",
-}
 
 
 def is_symptom_description(text: str) -> bool:

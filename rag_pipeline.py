@@ -172,6 +172,7 @@ Your answers must:
 - State clearly when the provided abstracts do not contain enough information
 - Never speculate beyond what the literature states
 - End with a "Papers that informed this answer:" section listing each cited abstract
+- Ask users if they have any other questions and give 3 similar questions as suggestions
 """
 
 

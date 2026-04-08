@@ -33,7 +33,7 @@ import time
 # ── Configuration ─────────────────────────────────────────────────────────────
 
 DB_PATH          = "abstracts.db"
-MAX_PER_DISEASE  = 100       # 250 x 5 groups = ~1250 abstracts total
+MAX_PER_DISEASE  = 250       # 250 x 5 groups = ~1250 abstracts total
 RATE_LIMIT_SLEEP = 0.35      # seconds between requests (keeps under 3 req/s)
 
 # ── Diagnosis / prognosis-focused MeSH Boolean queries ────────────────────────

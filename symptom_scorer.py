@@ -2,8 +2,8 @@
 symptom_scorer.py — Ensemble Disease Probability Scorer
 ========================================================
 Scores a filled ClinicalTemplate against all three trained classifiers
-(LinearSVC/LogisticRegression + BioBERT) and returns an ensemble
-probability distribution over the 6 disease classes.
+(LinearSVC/LogisticRegression/Random Forest + BioBERT) and returns an ensemble
+probability distribution over the 5 disease classes.
 
 The ensemble averages the softmax probabilities from the TF-IDF classifier
 and BioBERT. If BioBERT is not available, falls back to the sklearn model only.

@@ -810,7 +810,11 @@ def handle_turn(
         _models = {"clf": clf, "vectorizer": vectorizer, "le": le,
                    "tok_bert": None, "mod_bert": None}
         try:
-            _scores  = score_template(template.to_text(), _models)
+            _scores  = score_template(
+                template.to_text(),
+                _models,
+                symptom_text=template.to_symptom_text(),
+            )
             bars_msg = "\n\n" + format_text_scores(_scores, template)
             # Append diagnostic literature sources for the top disease
             bars_msg += _get_diagnostic_sources(template, _scores, retriever)
@@ -840,7 +844,11 @@ def handle_turn(
         _models = {"clf": clf, "vectorizer": vectorizer, "le": le,
                    "tok_bert": None, "mod_bert": None}
         try:
-            _scores  = score_template(template.to_text(), _models)
+            _scores  = score_template(
+                template.to_text(),
+                _models,
+                symptom_text=template.to_symptom_text(),
+            )
             bars_msg = "\n\n" + format_text_scores(_scores, template)
             # Append updated diagnostic literature sources
             bars_msg += _get_diagnostic_sources(template, _scores, retriever)

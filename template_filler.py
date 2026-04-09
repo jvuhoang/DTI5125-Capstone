@@ -83,6 +83,22 @@ class ClinicalTemplate:
         if self.current_medications: parts.append(f"Medications: {self.current_medications}")
         return ". ".join(parts)
 
+    def to_symptom_text(self) -> str:
+        """
+        Flatten only the symptom-relevant fields (no family history, no medications).
+
+        Used as input to the TF-IDF / ML classifiers so that disease names that
+        appear in the family history field ("father had Parkinson's") do not
+        contaminate the symptom-based probability estimate.  Family history is
+        handled separately in the heuristic overlay as a soft contextual prior.
+        """
+        parts = []
+        if self.age_gender:       parts.append(f"Patient: {self.age_gender}")
+        if self.primary_symptoms: parts.append(f"Symptoms: {self.primary_symptoms}")
+        if self.duration:         parts.append(f"Duration: {self.duration}")
+        if self.severity:         parts.append(f"Severity: {self.severity}")
+        return ". ".join(parts)
+
     def to_dict(self) -> dict:
         return {
             "age_gender":          self.age_gender,

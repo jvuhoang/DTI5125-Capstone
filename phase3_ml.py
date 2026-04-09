@@ -2,7 +2,7 @@
 Phase 3 — Clustering and Classification (3 Algorithms)
 =======================================================
 Part A: K-Means clustering with silhouette optimisation + PCA visualisation
-Part B: Three disease classifiers — LinearSVC, Logistic Regression, BioBERT
+Part B: Three disease classifiers — LinearSVC, Logistic Regression, Random Forest (optional: BioBERT)
         Full comparison with accuracy charts, confusion matrices, error analysis
 
 Install:
@@ -409,7 +409,7 @@ def save_best_sklearn(results: dict, vectorizer, le) -> None:
     """
     Save sklearn models for runtime use in the chatbot.
 
-    Two artefacts are always produced:
+    Artifacts produced:
       disease_classifier.pkl        — the best-performing sklearn model
                                       (LinearSVC, LR, or RandomForest)
       random_forest_classifier.pkl  — the Random Forest model specifically,

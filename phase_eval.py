@@ -1,7 +1,7 @@
 """
 phase_eval.py — Standalone Evaluation Module
 =============================================
-Runs four independent evaluations WITHOUT modifying any existing files:
+Runs four independent evaluations:
 
   Section 1 — NER Evaluation
       Measures precision, recall and F1 for scispaCy entity extraction

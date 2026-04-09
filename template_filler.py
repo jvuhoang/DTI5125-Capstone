@@ -238,6 +238,12 @@ def extract_from_text(user_text: str, template: ClinicalTemplate) -> ClinicalTem
     text_lower = user_text.lower()
     words      = set(text_lower.split())
 
+    # Snapshot of family_history at entry — used by the medications guard below
+    # to distinguish "family history was set in a previous turn (safe to ask
+    # about medications)" from "family history was just set this very turn (the
+    # 'no' that filled it must not also fill medications)".
+    _family_history_on_entry = template.family_history
+
     # ── Severity ──────────────────────────────────────────────────────────────
     if template.severity is None:
         for sev in ["severe", "moderate", "mild"]:   # check severe first
@@ -249,8 +255,10 @@ def extract_from_text(user_text: str, template: ClinicalTemplate) -> ClinicalTem
                 "bad", "serious", "intense", "extreme", "very bad", "really bad",
                 "unbearable", "debilitating", "crippling", "can't function",
                 "can't walk", "can't talk", "getting worse", "worsening",
-                "significantly", "drastically", "a lot", "quite bad", "pretty bad",
+                "significantly", "drastically", "quite bad", "pretty bad",
                 "affecting daily", "interfering with", "constant", "all the time",
+                # NOTE: "a lot" removed — "fall down a lot" is symptom frequency,
+                # not severity, and caused false severity=severe on intake.
             }
             mild_phrases = {
                 "light", "slight", "little", "minor", "manageable", "not too bad",
@@ -467,11 +475,31 @@ def extract_from_text(user_text: str, template: ClinicalTemplate) -> ClinicalTem
                 template.primary_symptoms = ", ".join(truly_new)
 
     # ── Medications — scispaCy CHEMICAL entities ──────────────────────────────
-    # Only process this field when family_history is already filled, i.e. the
-    # chatbot has already asked the medications question.  Without this guard,
-    # a bare "no" answering the family-history question would simultaneously
-    # set current_medications = "None" and skip the medications question entirely.
-    if template.current_medications is None and template.family_history is not None:
+    # Guard: only run this block when ALL preceding fields are already filled.
+    # The previous guard (family_history is not None) was insufficient — when
+    # the user answers the family-history question with "no", family_history
+    # is set to "none known" earlier in this same function call, so the guard
+    # passed immediately and a bare "no" simultaneously set current_medications
+    # = "None", skipping the medications question entirely.
+    #
+    # Requiring all other fields to be filled means the block only runs when
+    # medications is genuinely the next (and only remaining) question.
+    # CHEMICAL-entity extraction uses the same strict guard so that named drugs
+    # mentioned early ("I'm taking levodopa") are caught on the correct turn.
+    _all_pre_med_filled = (
+        template.primary_symptoms is not None
+        and template.duration      is not None
+        and template.severity      is not None
+        and template.age_gender    is not None
+        # Use the snapshot taken at entry, NOT template.family_history (which
+        # may have just been set earlier in this same call).  This prevents
+        # "no" answering the family-history question from simultaneously
+        # being consumed as a "no medications" answer.
+        and _family_history_on_entry is not None
+        and _family_history_on_entry != "__YES__"  # pending family-detail follow-up
+    )
+
+    if template.current_medications is None and _all_pre_med_filled:
         text_clean = user_text.lower().strip().strip('.,!?')
 
         negation_keywords = ["no", "none", "nothing", "n/a", "no meds", "no medication",
@@ -486,7 +514,7 @@ def extract_from_text(user_text: str, template: ClinicalTemplate) -> ClinicalTem
             text_clean in negation_keywords or
             any(phrase in text_clean for phrase in negation_phrases) or
             # Catch replies that START with "none", "no", or "nothing" even when
-            # extra context follows (e.g. "none and my sister has dementia").
+            # extra context follows (e.g. "none, but I also have headaches").
             # Using a word-boundary regex so "someone" doesn't false-match.
             bool(re.search(r'^(?:none|no|nothing)\b', text_clean))
         )

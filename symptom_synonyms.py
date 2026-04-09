@@ -181,6 +181,7 @@ SYMPTOM_SYNONYMS: dict[str, str] = {
     "unclear speech":               "dysarthria",
     "speech difficulty":            "dysarthria",
     "difficulty speaking":          "dysarthria",
+    "difficulties speaking":        "dysarthria",
     "speech become nasal":          "dysarthria",
     "nasal speech":                 "dysarthria",
     "speech has become nasal":      "dysarthria",
@@ -590,7 +591,7 @@ _RAW_PATTERNS = [
 
     # Speech
     (r"slurr(?:ing|ed)\s+(?:speech|words?|my\s+words?)",           "dysarthria"),
-    (r"(?:trouble|difficulty|hard(?:er)?)\s+(?:speak(?:ing)?|talk(?:ing)?)", "dysarthria"),
+    (r"(?:trouble|difficult(?:y|ies?)|hard(?:er)?)\s+(?:speak(?:ing)?|talk(?:ing)?)", "dysarthria"),
     (r"can'?t\s+(?:speak|talk)\b",                                  "dysarthria"),
     (r"speech\s+(?:is\s+|has\s+(?:become\s+))?(?:slurred|unclear|nasal|soft|quiet|weak)", "dysarthria"),
     (r"(?:can'?t\s+find|forget(?:ting)?)\s+(?:the\s+)?(?:right\s+)?words?", "aphasia"),

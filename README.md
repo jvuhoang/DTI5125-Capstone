@@ -136,7 +136,7 @@ python phase_eval.py --section rouge  # ROUGE chatbot benchmark only
 python phase_eval.py --section error  # classifier confusion + error audit only
 ```
 
-This produces a console report and writes an `error_analysis.csv` file of the lowest-scoring chatbot answers for inspection. No pipeline re-run is required — evaluation reads from the already-built artefacts.
+This produces a console report and writes an `error_analysis.csv` file of the lowest-scoring chatbot answers for inspection. No pipeline re-run is required — evaluation reads from the already-built artifacts.
 
 ### Step 4c — Run the systematic routing error analysis (optional)
 

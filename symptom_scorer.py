@@ -20,6 +20,129 @@ from typing import Optional
 MODEL_DIR = "biobert_classifier"
 
 
+# ── Heuristic calibration overlay ────────────────────────────────────────────
+#
+# The TF-IDF + SVM ensemble is trained on PubMed abstracts.  Stroke papers
+# use very broad clinical vocabulary (patient demographics, family history,
+# medications) which the vectoriser sees on EVERY template regardless of
+# symptoms, causing a persistent Stroke over-prediction bias.
+#
+# This overlay applies lightweight multiplicative factors to the ensemble
+# probabilities based on highly disease-specific symptom keywords found in
+# the template text, then re-normalises.  Boosts are only applied when the
+# keyword is literally present (substring match), so the logic is transparent
+# and easy to audit.  Factors > 1.0 increase a disease's share; the Stroke
+# de-boost fires whenever NO stroke-specific indicator is present.
+#
+# Tuning guideline: keep boost factors between 1.2–2.0 (boost) or 0.4–0.7
+# (de-boost).  Larger values risk over-correcting a genuinely ambiguous case.
+
+_HEURISTIC_BOOSTS: dict[str, dict[str, float]] = {
+    # ── Parkinson's ───────────────────────────────────────────────────────────
+    "resting tremor":       {"Parkinson": 1.8},
+    "pill-rolling":         {"Parkinson": 2.0},
+    "bradykinesia":         {"Parkinson": 1.8},
+    "freezing":             {"Parkinson": 1.5},
+    "cogwheel":             {"Parkinson": 1.8},
+    "tremor":               {"Parkinson": 1.4},
+    "rigidity":             {"Parkinson": 1.4},
+    "shuffling":            {"Parkinson": 1.4},
+    "postural instability": {"Parkinson": 1.5},
+    "rem sleep":            {"Parkinson": 1.6},   # REM behaviour disorder is hallmark
+    "hyposmia":             {"Parkinson": 1.4},
+    "anosmia":              {"Parkinson": 1.2},
+    "hypophonia":           {"Parkinson": 1.4},
+    "masked face":          {"Parkinson": 1.5},
+    "hypomimia":            {"Parkinson": 1.5},
+    "falls":                {"Parkinson": 1.2},   # postural instability (mild boost)
+    "sleep disturbance":    {"Parkinson": 1.3},   # REM-related insomnia
+
+    # ── Alzheimer's / Dementia ────────────────────────────────────────────────
+    "memory loss":          {"Alzheimer": 1.8, "Dementia": 1.5},
+    "episodic memory":      {"Alzheimer": 1.6},
+    "forgetfulness":        {"Alzheimer": 1.4, "Dementia": 1.3},
+    "confusion":            {"Alzheimer": 1.3, "Dementia": 1.4},
+    "disorientation":       {"Alzheimer": 1.3, "Dementia": 1.4},
+    "aphasia":              {"Alzheimer": 1.4, "Dementia": 1.2},
+    "cognitive decline":    {"Alzheimer": 1.4, "Dementia": 1.4},
+    "word finding":         {"Alzheimer": 1.3, "Dementia": 1.2},
+
+    # ── ALS ───────────────────────────────────────────────────────────────────
+    "muscle atrophy":       {"ALS": 1.6},
+    "muscle wasting":       {"ALS": 1.6},
+    "fasciculation":        {"ALS": 1.9},
+    "bulbar dysfunction":   {"ALS": 1.7},
+    "bulbar palsy":         {"ALS": 1.7},
+    "dysphagia":            {"ALS": 1.4},
+    "limb weakness":        {"ALS": 1.5},
+    "muscle weakness":      {"ALS": 1.3},
+    "respiratory":          {"ALS": 1.3},
+    "dysarthria":           {"ALS": 1.3, "Parkinson": 1.1},
+
+    # ── Huntington's ─────────────────────────────────────────────────────────
+    "chorea":               {"Huntington": 2.0},
+    "involuntary movement": {"Huntington": 1.6},
+    "choreiform":           {"Huntington": 2.0},
+    "huntington":           {"Huntington": 2.0},
+
+    # ── Stroke — positive boosts for genuinely stroke-specific features ───────
+    "sudden":               {"Stroke": 1.5},
+    "acute onset":          {"Stroke": 1.4},
+    "hemiplegia":           {"Stroke": 1.6},
+    "hemiparesis":          {"Stroke": 1.5},
+    "hemorrhagic":          {"Stroke": 1.5},
+    "ischaemic":            {"Stroke": 1.5},
+    "ischemic":             {"Stroke": 1.5},
+    "tia":                  {"Stroke": 1.6},
+    "transient ischemic":   {"Stroke": 1.7},
+    "infarction":           {"Stroke": 1.5},
+    "atrial fibrillation":  {"Stroke": 1.4},
+    "thrombosis":           {"Stroke": 1.4},
+}
+
+# When NONE of these keywords appear, Stroke is penalised (de-boosted).
+# These are indicators that a symptom presentation is genuinely stroke-like.
+_STROKE_SPECIFIC_INDICATORS = {
+    "sudden", "acute onset", "hemiplegia", "hemiparesis", "hemorrhagic",
+    "ischaemic", "ischemic", "tia", "transient ischemic", "infarction",
+    "atrial fibrillation", "thrombosis", "embolism", "cerebrovascular",
+    "brain attack", "one-sided", "one side", "hemiplegic",
+}
+_STROKE_DEBOOOST_FACTOR = 0.45   # reduce Stroke share by ~55% when no stroke indicator present
+
+
+def _apply_heuristic_overlay(scores: dict, template_text: str) -> dict:
+    """
+    Adjust ensemble probabilities using disease-specific symptom keywords.
+
+    Applies multiplicative boosts for highly specific symptoms, applies a
+    Stroke de-boost when no stroke-specific indicator is present, then
+    re-normalises so probabilities sum to 1.0.
+    """
+    text_lower = template_text.lower()
+    adjusted   = dict(scores)
+
+    # Positive boosts
+    for keyword, boosts in _HEURISTIC_BOOSTS.items():
+        if keyword in text_lower:
+            for disease, factor in boosts.items():
+                if disease in adjusted:
+                    adjusted[disease] *= factor
+
+    # Stroke de-boost — only fires when the template has no stroke-specific signal
+    if "Stroke" in adjusted:
+        has_stroke_indicator = any(ind in text_lower for ind in _STROKE_SPECIFIC_INDICATORS)
+        if not has_stroke_indicator:
+            adjusted["Stroke"] *= _STROKE_DEBOOOST_FACTOR
+
+    # Re-normalise
+    total = sum(adjusted.values())
+    if total > 0:
+        adjusted = {d: v / total for d, v in adjusted.items()}
+
+    return adjusted
+
+
 # ── Model loading ─────────────────────────────────────────────────────────────
 
 def load_sklearn_models():
@@ -213,10 +336,14 @@ def score_template(template_text: str, models: dict) -> dict:
     # Equal-weight average across all available members
     ensemble = np.mean(proba_list, axis=0)
 
-    return {
+    raw_scores = {
         disease: float(prob)
         for disease, prob in zip(le.classes_, ensemble)
     }
+
+    # Apply heuristic calibration to correct the Stroke over-prediction bias
+    # introduced by the TF-IDF model's sensitivity to general clinical language.
+    return _apply_heuristic_overlay(raw_scores, template_text)
 
 
 # ── Confidence label ──────────────────────────────────────────────────────────

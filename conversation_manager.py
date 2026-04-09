@@ -79,6 +79,11 @@ _SYMPTOM_KEYWORDS = {
     "balance", "walk", "speech", "swallow", "fatigue", "pain",
     "confusion", "hallucin", "depress", "anxiety", "seizure",
     "paralys", "numb", "tingle", "chorea", "involuntary",
+    # Additional roots — extend "i cannot X / i'm unable to X" detection
+    "sleep", "remember", "hold", "move", "stand", "breathe", "see", "hear",
+    "fall", "shak", "speak", "grip", "lift", "focus", "think",
+    # "could not control my hand", "memory has been getting worse"
+    "control", "worse",
 }
 
 
@@ -97,6 +102,17 @@ _SYMPTOM_REPORT_PHRASES = {
     "he has", "she has", "they have", "he is", "she is",
     "started having", "been experiencing", "been feeling",
     "also have", "i also", "as well as",
+    # Covers "I can't sleep", "I can't remember", "I can't walk", etc.
+    "i can't", "i cannot", "i'm unable",
+    # "My hands are shaking", "My memory is getting worse", "My left side is weak"
+    # Bare "my" is safe here: the guard also requires a _SYMPTOM_KEYWORDS hit,
+    # so "my family history is negative" and "my car broke down" don't trigger.
+    "my ",
+    # "Could not control my hand", "I could not stand up", "She could not speak"
+    "could not", "i could not", "couldn't", "i couldn't",
+    # "It came on suddenly / overnight / without warning" — acute neurological events
+    "came on suddenly", "came on overnight", "came on without warning",
+    "woke up and", "woke up unable", "woke up with",
 }
 
 # ── Medical relevance keyword set ────────────────────────────────────────────
@@ -115,6 +131,12 @@ _MEDICAL_RELEVANCE_KEYWORDS = {
     "diagnosis", "prognosis", "clinical", "patient", "doctor", "physician",
     "hospital", "clinic", "neurologist", "specialist", "medical", "health",
     "brain", "nerve", "neural", "cerebral", "neurological", "neurology",
+    # ── Sudden-onset language — neurological emergencies ─────────────────────
+    # "It came on suddenly", "woke up and couldn't move", "out of nowhere"
+    # These describe acute neurological events (stroke, TIA, seizure) but
+    # contain no disease or body-system names, so they were wrongly blocked.
+    "suddenly", "sudden", "woke up", "came on", "out of nowhere",
+    "all of a sudden", "without warning", "overnight",
     "neurodegenerative", "genetic", "hereditary", "inherited", "progressive",
     "chronic", "acute", "onset", "stage", "early-stage", "late-stage",
 
@@ -289,21 +311,52 @@ def is_off_topic(text: str) -> bool:
     """
     Returns True when a message has no apparent medical relevance.
 
-    The check is purely keyword-based — if none of the ~190 medical/disease/
-    symptom terms in _MEDICAL_RELEVANCE_KEYWORDS appear in the text, the
-    message is considered off-topic regardless of whether it is phrased as a
-    question.  This prevents non-medical questions like
-    "what are the differences between ice cream and milk?" from reaching the
-    RAG pipeline, because they contain a question mark but zero medical content.
+    The check is keyword-based.  A query is considered off-topic when:
+      1. No medical keyword is present at all, OR
+      2. The ONLY medical word is a generic meta-word (symptom, treatment, etc.)
+         that happens to appear alongside a clearly non-medical subject —
+         e.g. "what are the symptoms of ice cream melting?" only contains
+         "symptoms", but the thing being asked about ("ice cream melting") is
+         not a medical entity.
+
+    For case 2 we extract the subject of common "symptoms/treatment of X"
+    phrases and verify that X itself contains a medical keyword.  If it does
+    not, the query is treated as off-topic.
     """
     if not text.strip():
         return False
     text_lower = text.lower()
-    # Any recognised medical keyword → medically relevant, not off-topic
-    if any(kw in text_lower for kw in _MEDICAL_RELEVANCE_KEYWORDS):
-        return False
+
     # No medical signal at all → off-topic
-    return True
+    if not any(kw in text_lower for kw in _MEDICAL_RELEVANCE_KEYWORDS):
+        return True
+
+    # Subject-validation for "symptoms/causes/treatment of X" queries.
+    # When the only medical word is a generic meta-word like "symptoms" and the
+    # subject X contains no medical keyword, the query is off-topic.
+    #
+    # We also include common disease/condition words not in the chatbot's primary
+    # scope so that queries about related neurological conditions are not blocked.
+    _SUBJECT_INDICATORS = _MEDICAL_RELEVANCE_KEYWORDS | {
+        "sclerosis", "palsy", "neuropathy", "atrophy", "epilepsy",
+        "migraine", "tumour", "tumor", "cancer", "injury", "infection",
+        "autoimmune", "inflammation", "deficiency", "failure",
+    }
+
+    _META_OF_PATTERN = re.compile(
+        r'\b(?:symptoms?|causes?|signs?|effects?|treatments?|therapies?|'
+        r'cures?)\s+(?:of|for|in|with)\s+'
+        r'([a-z][a-z0-9\s\'\-]{2,50}?)(?:\?|$|[,.])',
+        re.I,
+    )
+    match = _META_OF_PATTERN.search(text_lower)
+    if match:
+        subject = match.group(1).strip()
+        if not any(kw in subject for kw in _SUBJECT_INDICATORS):
+            # "symptoms of ice cream melting" — subject is not medical
+            return True
+
+    return False
 
 
 def predict_disease(text: str, clf, vectorizer, le) -> Optional[str]:

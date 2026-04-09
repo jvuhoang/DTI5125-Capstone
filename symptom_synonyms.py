@@ -550,7 +550,7 @@ _RAW_PATTERNS = [
     (r"(?:short[- ]?term\s+)?memory\s+(?:loss|problem|issue|trouble|impairment)", "memory loss"),
     (r"don'?t\s+remember",                                          "memory loss"),
     (r"can'?t\s+recall",                                            "memory loss"),
-    (r"memory\s+(?:is|has\s+been|getting)\s+(?:bad|worse|poor)",    "memory loss"),
+    (r"memory\s+(?:(?:is|has\s+been)\s+)?(?:getting\s+)?(?:bad|worse|poor)", "memory loss"),
     (r"brain\s+fog",                                                "cognitive decline"),
     (r"can'?t\s+(?:think|concentrate|focus)",                       "cognitive decline"),
     (r"getting\s+(?:lost|confused)",                                "confusion"),
@@ -588,6 +588,11 @@ _RAW_PATTERNS = [
     (r"(?:arm|leg|limb|muscle)s?\s+(?:feel(?:ing)?\s+)?(?:weak|numb|heavy)", "muscle weakness"),
     (r"feel(?:ing|s?)?\s+(?:very\s+|really\s+)?weak\b",            "muscle weakness"),
     (r"can'?t\s+(?:lift|grip|hold|open)",                          "muscle weakness"),
+    # "could not control my left hand", "woke up and couldn't control my arm"
+    (r"(?:could\s+not|couldn'?t)\s+control\s+(?:my\s+)?(?:(?:left|right)\s+)?(?:hand|arm|leg|foot|feet|fingers?|side|limb)", "motor weakness"),
+    (r"(?:could\s+not|couldn'?t)\s+(?:move|use)\s+(?:my\s+)?(?:(?:left|right)\s+)?(?:hand|arm|leg|foot|feet|side|limb)", "motor weakness"),
+    (r"woke\s+up\s+(?:and\s+)?(?:could\s+not|couldn'?t)\s+(?:move|control|use)", "motor weakness"),
+    (r"(?:left|right)\s+(?:hand|arm|leg|side)\s+(?:is\s+|was\s+)?(?:not\s+)?(?:working|responding|moving)", "motor weakness"),
 
     # Speech
     (r"slurr(?:ing|ed)\s+(?:speech|words?|my\s+words?)",           "dysarthria"),

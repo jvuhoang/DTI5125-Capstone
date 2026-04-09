@@ -286,17 +286,20 @@ def extract_from_text(user_text: str, template: ClinicalTemplate) -> ClinicalTem
     # ── Age / gender ─────────────────────────────────────────────────────────
     if template.age_gender is None:
         age_m = _AGE_PATTERN.search(text_lower)
+        # Strip punctuation from tokens for gender-word matching
+        msg_words = set(w.rstrip(".,!?;:'\"") for w in text_lower.split())
         if age_m:
             # Group 1 = age-first ("65 male"), group 2 = gender-first ("M 65")
             age = age_m.group(1) or age_m.group(2)
             matched = age_m.group(0).lower()
-            msg_words = set(text_lower.split())
             # Check the matched token first (catches "65M", "65 F", "M 65", etc.)
-            # then fall back to scanning the full message for gender words
-            if any(g in matched for g in ("male", " m", "m ")):
-                gender = "male"
-            elif any(g in matched for g in ("female", " f", "f ")):
+            # then fall back to scanning the full message for gender words.
+            # Check "female" before "male" — "female" contains the substring
+            # "male" so the order matters for substring matching.
+            if any(g in matched for g in ("female", " f", "f ")):
                 gender = "female"
+            elif any(g in matched for g in ("male", " m", "m ")):
+                gender = "male"
             elif msg_words & _MALE_WORDS:
                 gender = "male"
             elif msg_words & _FEMALE_WORDS:
@@ -304,6 +307,16 @@ def extract_from_text(user_text: str, template: ClinicalTemplate) -> ClinicalTem
             else:
                 gender = "unknown gender"
             template.age_gender = f"{age} years old, {gender}"
+        else:
+            # Fallback: bare 2-3 digit number + gender word anywhere in the
+            # message.  Handles "56 woman", "woman, 56", "I'm a 56 year old
+            # woman", etc. — cases where the gender word is not immediately
+            # adjacent to the number so the stricter _AGE_PATTERN misses it.
+            bare_age_m = re.search(r'\b(\d{2,3})\b', text_lower)
+            if bare_age_m and (msg_words & (_MALE_WORDS | _FEMALE_WORDS)):
+                age    = bare_age_m.group(1)
+                gender = "female" if msg_words & _FEMALE_WORDS else "male"
+                template.age_gender = f"{age} years old, {gender}"
 
     # ── Family history ────────────────────────────────────────────────────────
     _AFFIRM = {"yes", "yeah", "yep", "yup", "sure", "correct", "there is",
@@ -338,10 +351,17 @@ def extract_from_text(user_text: str, template: ClinicalTemplate) -> ClinicalTem
                                       "yes his", "yes her", "yes their"]
         ):
             template.family_history = "__YES__"
-        # Bare negative → mark as none known
-        elif text_lower.strip() in _DENY or any(
-            p in text_lower for p in ["no family", "no history", "none known",
-                                      "not that i know", "no neurological"]
+        # Bare negative → mark as none known.
+        # Also handle "no. But I also..." — first token is a denial word even
+        # when the user volunteers extra info in the same message.
+        elif (
+            text_lower.strip() in _DENY
+            or (text_lower.split()
+                and text_lower.split()[0].rstrip(".,!?;:'\"") in _DENY)
+            or any(
+                p in text_lower for p in ["no family", "no history", "none known",
+                                          "not that i know", "no neurological"]
+            )
         ):
             template.family_history = "none known"
         # Substantive answer with family/disease keywords → store directly
